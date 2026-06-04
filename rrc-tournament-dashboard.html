@@ -1305,10 +1305,12 @@ function App() {
                     <div className="field-row">
                       <label className="field-label">Partner Name</label>
                       <input type="text" value={state.sponsorship.barterShuttle.name} onChange={e => upd('sponsorship.barterShuttle.name', e.target.value)} placeholder="Agency name" />
+                      <div className="field-hint">Partner providing shuttles and water bottles</div>
                     </div>
                     <div className="field-row">
                       <label className="field-label">Barter Value (Rs) - covers shuttle/water cost</label>
                       <input type="number" min="0" value={state.sponsorship.barterShuttle.value} onChange={e => upd('sponsorship.barterShuttle.value', Number(e.target.value) || 0)} />
+                      <div className="field-hint">Market value of goods provided - shown as in-kind revenue</div>
                     </div>
                     <p style={{fontSize:11, color:'var(--green-mid)'}}>Shuttle/water fallback cost (Rs {state.costs.shuttleWaterFallback.toLocaleString('en-IN')}) removed from costs when enabled.</p>
                   </div>
@@ -1328,10 +1330,12 @@ function App() {
                     <div className="field-row">
                       <label className="field-label">Partner Name</label>
                       <input type="text" value={state.sponsorship.barterCoffee.name} onChange={e => upd('sponsorship.barterCoffee.name', e.target.value)} placeholder="Coffee partner name" />
+                      <div className="field-hint">Partner providing coffee station and mist fans</div>
                     </div>
                     <div className="field-row">
                       <label className="field-label">Barter Value (Rs) - covers coffee/mist fans cost</label>
                       <input type="number" min="0" value={state.sponsorship.barterCoffee.value} onChange={e => upd('sponsorship.barterCoffee.value', Number(e.target.value) || 0)} />
+                      <div className="field-hint">Market value offset - reduces your cash costs</div>
                     </div>
                     <p style={{fontSize:11, color:'var(--green-mid)'}}>Coffee/mist fans per-day row is covered. Cost removed from calculations.</p>
                   </div>
@@ -1347,10 +1351,12 @@ function App() {
                     <div className="stepper-val">{state.vendorStalls.count}</div>
                     <button className="stepper-btn" onClick={() => upd('vendorStalls.count', state.vendorStalls.count + 1)}>+</button>
                   </div>
+                  <div className="field-hint">Stalls paying to set up at your venue (coffee shops, brands)</div>
                 </div>
                 <div className="field-row">
                   <label className="field-label">Fee Per Stall (Rs)</label>
                   <input type="number" min="0" value={state.vendorStalls.feePerStall} onChange={e => upd('vendorStalls.feePerStall', Number(e.target.value) || 0)} />
+                  <div className="field-hint">Amount each vendor pays for the 2-day spot</div>
                 </div>
                 <div className="summary-row">
                   <span className="label">Vendor Revenue</span>
@@ -1372,10 +1378,12 @@ function App() {
                   <div className="field-row">
                     <label className="field-label">General Ticket Price (Rs)</label>
                     <input type="number" min="0" value={state.sundowner.generalTicketPrice} onChange={e => upd('sundowner.generalTicketPrice', Number(e.target.value) || 0)} />
+                    <div className="field-hint">Walk-in ticket price for the evening party</div>
                   </div>
                   <div className="field-row">
                     <label className="field-label">General Attendees</label>
                     <input type="number" min="0" value={state.sundowner.generalAttendees} onChange={e => upd('sundowner.generalAttendees', Number(e.target.value) || 0)} />
+                    <div className="field-hint">Expected paid guests (not including partners)</div>
                   </div>
                   <div className="toggle-row" style={{marginBottom:8}}>
                     <Toggle on={state.sundowner.vipEnabled} onChange={v => upd('sundowner.vipEnabled', v)} />
@@ -1386,10 +1394,12 @@ function App() {
                       <div className="field-row">
                         <label className="field-label">VIP Ticket Price (Rs)</label>
                         <input type="number" min="0" value={state.sundowner.vipTicketPrice} onChange={e => upd('sundowner.vipTicketPrice', Number(e.target.value) || 0)} />
+                        <div className="field-hint">Premium section with better access/food</div>
                       </div>
                       <div className="field-row">
                         <label className="field-label">VIP Attendees</label>
                         <input type="number" min="0" value={state.sundowner.vipAttendees} onChange={e => upd('sundowner.vipAttendees', Number(e.target.value) || 0)} />
+                        <div className="field-hint">Expected VIP section headcount</div>
                       </div>
                     </>
                   )}
@@ -1406,6 +1416,7 @@ function App() {
           <div className="card" style={{marginBottom:12}}>
             <Section title="Costs">
               <div className="subsection-title">One-Time Costs</div>
+              <div className="field-hint" style={{marginBottom:8}}>One-time, billed once regardless of event days</div>
               {state.costs.oneTime.map(c => (
                 <CostRowItem key={c.id} item={c} eventDays={state.eventDays}
                   onChange={newItem => updOneTimeCost(c.id, newItem)}
@@ -1424,6 +1435,7 @@ function App() {
 
               <div className="divider" />
               <div className="subsection-title">Per-Day Costs (x {state.eventDays} days)</div>
+              <div className="field-hint" style={{marginBottom:8}}>Multiplied by number of event days</div>
               {state.costs.perDay.map(c => {
                 const barterManaged = c.id === 'coffeeMist' && state.sponsorship.barterCoffee.enabled;
                 return (
@@ -1444,6 +1456,7 @@ function App() {
                     style={{width:80}} />
                   <span style={{fontSize:13, color:'var(--text-secondary)'}}>= {formatINR(metrics.contingencyAmount)}</span>
                 </div>
+                <div className="field-hint">Buffer for unexpected costs - applied to total before prize pool</div>
               </div>
               <div className="summary-row" style={{marginTop:8}}>
                 <span className="label" style={{fontWeight:700}}>Pre-contingency Total</span>
@@ -1472,6 +1485,7 @@ function App() {
                     <div style={{display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text-muted)'}}>
                       <span>0%</span><span>30%</span><span>60%</span>
                     </div>
+                    <div className="field-hint">% of gross surplus set aside for player and partner prizes</div>
                   </div>
                   <div className="summary-row">
                     <span className="label">Prize Pool Amount</span>
