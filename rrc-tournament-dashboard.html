@@ -206,13 +206,49 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .variance-row .val { font-weight: 600; }
 .event-name-edit { display: flex; align-items: center; gap: 8px; flex: 1; max-width: 340px; }
 .event-name-edit input { height: 32px; font-size: 14px; font-weight: 600; }
+.field-hint { font-size: 11px; color: var(--text-muted); margin-top: 3px; line-height: 1.4; }
+.mobile-tab-bar {
+  display: none;
+  position: fixed; bottom: 0; left: 0; right: 0; height: 56px;
+  background: var(--surface); border-top: 1px solid var(--border);
+  z-index: 100; align-items: stretch;
+}
+.mobile-tab {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 2px; border: none; background: transparent;
+  font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer;
+}
+.mobile-tab.active { color: var(--blue-mid); border-top: 2px solid var(--blue-mid); }
+.mobile-tab-icon { font-size: 18px; }
+.mobile-results-strip {
+  display: none;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 12px 16px; margin-bottom: 12px;
+  flex-direction: row; gap: 0;
+}
+.mrs-item { flex: 1; text-align: center; }
+.mrs-item + .mrs-item { border-left: 1px solid var(--border); }
+.mrs-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
+.mrs-value { font-size: 15px; font-weight: 700; margin-top: 2px; }
 @media (max-width: 768px) {
-  .main-layout { flex-direction: column; }
-  .left-col { width: 100%; border-right: none; border-bottom: 1px solid var(--border); height: auto; max-height: 60vh; }
-  .right-col { width: 100%; }
-  .left-sticky-footer { width: 100%; }
+  .main-layout { flex-direction: column; height: calc(100vh - 60px - 56px); overflow: hidden; }
+  .left-col { width: 100%; border-right: none; height: 100%; display: none; padding-bottom: 16px; overflow-y: auto; }
+  .left-col.tab-active { display: block; overflow-y: auto; }
+  .right-col { width: 100%; height: 100%; display: none; overflow-y: auto; }
+  .right-col.tab-active { display: block; }
+  .left-sticky-footer { display: none; }
+  .mobile-tab-bar { display: flex; }
+  .mobile-results-strip { display: flex; }
   .metric-grid { grid-template-columns: 1fr 1fr; }
+  .metric-grid .metric-card:first-child { grid-column: 1 / -1; }
   .tables-row { grid-template-columns: 1fr; }
+  input[type="text"], input[type="number"] { height: 44px; font-size: 16px; }
+  .seg-btn { height: 44px; }
+  .stepper-btn { width: 44px; height: 44px; }
+  .stepper-val { height: 44px; }
+  .toggle { width: 48px; height: 26px; }
+  .section-header { min-height: 48px; }
+  .field-label { font-size: 13px; }
 }
 </style>
 </head>
@@ -422,10 +458,12 @@ function BrandPartnerCard({ partner, onChange, onDelete, disabled, tierLabel }) 
         <input type="text" value={partner.name} onChange={e => onChange({ ...partner, name: e.target.value })} placeholder={`${tierLabel} name`} />
         <button className="icon-btn danger" onClick={onDelete} disabled={disabled} title="Delete partner">&#128465;</button>
       </div>
+      <div className="field-hint" style={{marginBottom:8}}>Used in Excel pitch pack and partner reports</div>
       <div className="partner-info-row">
         <div className="field-row">
           <label className="field-label">Partnership Fee (Rs)</label>
           <input type="number" min="0" value={partner.fee} onChange={e => onChange({ ...partner, fee: Number(e.target.value) || 0 })} />
+          <div className="field-hint">Standard Rs 1,50,000 - edit per partner if negotiated differently</div>
         </div>
         <div className="field-row">
           <label className="field-label">Pairs</label>
@@ -435,6 +473,7 @@ function BrandPartnerCard({ partner, onChange, onDelete, disabled, tierLabel }) 
                 onClick={() => onChange({ ...partner, pairsPerPartner: n })}>{n}</button>
             ))}
           </div>
+          <div className="field-hint">Each pair = 2 players. 3 pairs = 6 players representing this brand</div>
         </div>
       </div>
       <div className="partner-meta">
@@ -452,10 +491,12 @@ function CommunityPartnerCard({ partner, onChange, onDelete, tierLabel }) {
         <input type="text" value={partner.name} onChange={e => onChange({ ...partner, name: e.target.value })} placeholder={`${tierLabel} name`} />
         <button className="icon-btn danger" onClick={onDelete} title="Delete partner">&#128465;</button>
       </div>
+      <div className="field-hint" style={{marginBottom:8}}>Club, RWA, friend group, or locality team name</div>
       <div className="partner-info-row">
         <div className="field-row">
           <label className="field-label">Partnership Fee (Rs)</label>
           <input type="number" min="0" value={partner.fee} onChange={e => onChange({ ...partner, fee: Number(e.target.value) || 0 })} />
+          <div className="field-hint">Standard Rs 40,000 for 1 pair</div>
         </div>
         <div className="field-row">
           <label className="field-label">Pairs</label>
@@ -465,6 +506,7 @@ function CommunityPartnerCard({ partner, onChange, onDelete, tierLabel }) {
                 onClick={() => onChange({ ...partner, pairsPerPartner: n })}>{n}</button>
             ))}
           </div>
+          <div className="field-hint">1 pair = 2 players</div>
         </div>
       </div>
       <div className="partner-meta">
@@ -933,6 +975,7 @@ const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SU
 function App() {
   const [state, setState] = useState(initialState);
   const [cloudStatus, setCloudStatus] = useState('');
+  const [mobileTab, setMobileTab] = useState('setup');
 
   // Load from Supabase on mount (fall back to localStorage)
   useEffect(() => {
@@ -1126,26 +1169,49 @@ function App() {
       {/* MAIN LAYOUT */}
       <div className="main-layout">
         {/* LEFT COLUMN */}
-        <div className="left-col">
+        <div className={`left-col ${mobileTab==='setup'?'tab-active':''}`}>
+          {/* Mobile results strip */}
+          <div className="mobile-results-strip">
+            <div className="mrs-item">
+              <div className="mrs-label">Revenue</div>
+              <div className="mrs-value blue" style={{color:'var(--blue-mid)'}}>{formatINR(metrics.totalRevenue)}</div>
+            </div>
+            <div className="mrs-item">
+              <div className="mrs-label">RRC Earnings</div>
+              <div className="mrs-value" style={{color: metrics.rrcEarnings>=state.targetEarnings?'var(--green-mid)':'var(--amber-mid)'}}>{formatINR(metrics.rrcEarnings)}</div>
+            </div>
+            <div className="mrs-item">
+              <div className="mrs-label">Surplus</div>
+              <div className="mrs-value" style={{color: metrics.grossSurplus>=0?'var(--green-mid)':'var(--red-mid)'}}>{formatINR(metrics.grossSurplus)}</div>
+            </div>
+          </div>
 
           {/* Section 0: Event Settings */}
           <div className="card" style={{marginBottom:12}}>
             <div style={{fontWeight:700, fontSize:14, marginBottom:12, color:'var(--text-primary)'}}>Event Settings</div>
+            <div className="field-row">
+              <label className="field-label">Event Name</label>
+              <input type="text" value={state.eventName} onChange={e => upd('eventName', e.target.value)} />
+              <div className="field-hint">Shown on all reports and Excel exports</div>
+            </div>
             <div className="field-row">
               <label className="field-label">Event Duration</label>
               <div className="seg-btns">
                 <button className={`seg-btn ${state.eventDays === 1 ? 'active' : ''}`} onClick={() => upd('eventDays', 1)}>1 Day</button>
                 <button className={`seg-btn ${state.eventDays === 2 ? 'active' : ''}`} onClick={() => upd('eventDays', 2)}>2 Days</button>
               </div>
+              <div className="field-hint">Affects per-day costs automatically</div>
             </div>
             <div className="field-row">
               <label className="field-label">Target RRC Earnings (Rs)</label>
               <input type="number" min="0" value={state.targetEarnings} onChange={e => upd('targetEarnings', Number(e.target.value) || 0)} />
+              <div className="field-hint">Your personal income goal from organizing this event</div>
             </div>
             <div className="field-row">
               <label className="field-label">Player Registration Fee (Rs, max 1000)</label>
               <input type="number" min="0" max="1000" value={state.playerFee}
                 onChange={e => upd('playerFee', Number(e.target.value) || 0)} />
+              <div className="field-hint">Capped at Rs 1,000 - paid directly to event, not to partners</div>
               {state.playerFee > 1000 && <div className="red-warn">Player fee is capped at Rs 1,000. Calculations use Rs 1,000.</div>}
             </div>
           </div>
@@ -1213,14 +1279,17 @@ function App() {
                     <div className="field-row">
                       <label className="field-label">Sponsor Name</label>
                       <input type="text" value={state.sponsorship.paidSponsor.name} onChange={e => upd('sponsorship.paidSponsor.name', e.target.value)} placeholder="Sponsor name" />
+                      <div className="field-hint">Optional - for reports only</div>
                     </div>
                     <div className="field-row">
                       <label className="field-label">Sponsorship Amount (Rs)</label>
                       <input type="number" min="0" value={state.sponsorship.paidSponsor.amount} onChange={e => upd('sponsorship.paidSponsor.amount', Number(e.target.value) || 0)} />
+                      <div className="field-hint">Cash received upfront before the event</div>
                     </div>
                     <div className="field-row">
                       <label className="field-label">Description</label>
                       <input type="text" value={state.sponsorship.paidSponsor.description} onChange={e => upd('sponsorship.paidSponsor.description', e.target.value)} placeholder="Sponsorship details" />
+                      <div className="field-hint">What they get - PA mentions, banner, social posts</div>
                     </div>
                   </div>
                 )}
@@ -1448,7 +1517,7 @@ function App() {
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className="right-col">
+        <div className={`right-col ${mobileTab==='results'?'tab-active':''}`}>
 
           {/* RRC Earnings Card */}
           <div className="earnings-card">
@@ -1732,6 +1801,18 @@ function App() {
           </div>
 
         </div>
+      </div>
+
+      {/* MOBILE TAB BAR */}
+      <div className="mobile-tab-bar">
+        <button className={`mobile-tab ${mobileTab==='setup'?'active':''}`} onClick={()=>setMobileTab('setup')}>
+          <span className="mobile-tab-icon">✏️</span>
+          <span>Setup</span>
+        </button>
+        <button className={`mobile-tab ${mobileTab==='results'?'active':''}`} onClick={()=>setMobileTab('results')}>
+          <span className="mobile-tab-icon">📊</span>
+          <span>Results</span>
+        </button>
       </div>
 
       {/* LEFT STICKY FOOTER */}
