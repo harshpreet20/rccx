@@ -232,6 +232,42 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .mrs-value { font-size: 15px; font-weight: 700; margin-top: 2px; }
 @media (max-width: 768px) {
   .main-layout { flex-direction: column; height: calc(100vh - 44px - 56px); overflow: hidden; }
+  /* Tighten right col padding */
+  .right-col { padding: 10px; }
+  /* All cards get less padding */
+  .card { padding: 12px; }
+  /* Compress chart titles */
+  .chart-title { font-size: 13px; }
+  /* Tables: shrink font, allow scroll */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { font-size: 12px; min-width: 100%; }
+  th, td { padding: 6px 7px; white-space: nowrap; }
+  /* 2-day cost table: hide Category column */
+  .cost-breakdown-table th:nth-child(2),
+  .cost-breakdown-table td:nth-child(2) { display: none; }
+  /* Sensitivity table: hide Brand Revenue + Total Revenue columns (keep Count, Costs, Surplus, RRC) */
+  .sensitivity-table th:nth-child(2),
+  .sensitivity-table td:nth-child(2),
+  .sensitivity-table th:nth-child(3),
+  .sensitivity-table td:nth-child(3) { display: none; }
+  /* P&L summary rows: tighter */
+  .variance-row { padding: 6px 0; font-size: 13px; }
+  /* Download buttons: full width stacked */
+  .dl-btn-row { flex-direction: column; }
+  .dl-btn { width: 100%; height: 44px; text-align: center; }
+  /* Revenue/cost detail tables side by side: stack */
+  .tables-row { grid-template-columns: 1fr; }
+  /* Metric grid */
+  .metric-grid { grid-template-columns: 1fr 1fr; }
+  /* Partner tables: smaller font */
+  .partner-summary-table th, .partner-summary-table td { font-size: 11px; padding: 5px 6px; }
+  /* Hide less-critical partner table columns on mobile */
+  .partner-summary-table th:nth-child(6),
+  .partner-summary-table td:nth-child(6),
+  .partner-summary-table th:nth-child(7),
+  .partner-summary-table td:nth-child(7),
+  .partner-summary-table th:nth-child(8),
+  .partner-summary-table td:nth-child(8) { display: none; }
   .left-col { width: 100%; border-right: none; height: 100%; display: none; padding-bottom: 16px; overflow-y: auto; }
   .left-col.tab-active { display: block; overflow-y: auto; }
   .right-col { width: 100%; height: 100%; display: none; overflow-y: auto; }
@@ -935,23 +971,23 @@ function SensitivityTable({ state }) {
   }
   return (
     <div className="card">
-      <div className="chart-title">Partner Count Sensitivity (Brand 1-7, Community Fixed)</div>
+      <div className="chart-title">Partner Count Sensitivity</div>
       <div className="table-wrap">
-        <table>
+        <table className="sensitivity-table">
           <thead>
             <tr>
-              <th>Brand Count</th>
-              <th>Brand Revenue</th>
-              <th>Total Revenue</th>
-              <th>Total Costs</th>
-              <th>Gross Surplus</th>
+              <th>Brands</th>
+              <th>Brand Rev</th>
+              <th>Total Rev</th>
+              <th>Costs</th>
+              <th>Surplus</th>
               <th>RRC Earnings</th>
             </tr>
           </thead>
           <tbody>
             {rows.map(({ bc, m }) => (
-              <tr key={bc} className={bc === currentBrand ? 'highlight' : ''}>
-                <td>{bc}{bc === currentBrand ? ' (current)' : ''}</td>
+              <tr key={bc} className={bc === currentBrand ? 'highlight' : ''} style={bc === currentBrand ? {borderLeft:'3px solid var(--blue-mid)'} : {}}>
+                <td style={{fontWeight: bc === currentBrand ? 700 : 400}}>{bc}{bc === currentBrand ? ' *' : ''}</td>
                 <td>{formatINR(m.brandPartnerRevenue)}</td>
                 <td>{formatINR(m.totalRevenue)}</td>
                 <td>{formatINR(m.totalCosts)}</td>
@@ -962,6 +998,7 @@ function SensitivityTable({ state }) {
           </tbody>
         </table>
       </div>
+      <div style={{fontSize:11, color:'var(--text-muted)', marginTop:6}}>* current count | Community partners fixed</div>
     </div>
   );
 }
@@ -1600,7 +1637,7 @@ function App() {
           <div className="tables-row">
             <div className="card" style={{marginBottom:0}}>
               <div className="chart-title">Revenue Detail</div>
-              <table>
+              <div className="table-wrap"><table>
                 <thead><tr><th>Source</th><th>Amount</th><th>%</th></tr></thead>
                 <tbody>
                   {[
@@ -1622,11 +1659,11 @@ function App() {
                     <td>TOTAL</td><td>{formatINR(metrics.totalRevenue)}</td><td>100%</td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
             <div className="card" style={{marginBottom:0}}>
               <div className="chart-title">Cost Detail</div>
-              <table>
+              <div className="table-wrap"><table>
                 <thead><tr><th>Category</th><th>Amount</th><th>%</th></tr></thead>
                 <tbody>
                   {[
@@ -1644,7 +1681,7 @@ function App() {
                     <td>TOTAL</td><td>{formatINR(metrics.totalCosts)}</td><td>100%</td>
                   </tr>
                 </tbody>
-              </table>
+              </table></div>
             </div>
           </div>
 
@@ -1705,7 +1742,8 @@ function App() {
           {state.eventDays === 2 && (
             <div className="card" style={{marginTop:12}}>
               <div className="chart-title">2-Day Cost Breakdown</div>
-              <table>
+              <div className="table-wrap">
+              <table className="cost-breakdown-table">
                 <thead>
                   <tr><th>Line Item</th><th>Category</th><th>Day 1</th><th>Day 2</th><th>Total</th></tr>
                 </thead>
@@ -1755,6 +1793,7 @@ function App() {
                   </tr>
                 </tbody>
               </table>
+              </div>
             </div>
           )}
 
