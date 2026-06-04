@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/rrc-tournament-dashboard.html" },
+    { "source": "/(.*)", "destination": "/rrc-tournament-dashboard.html" }
+  ]
+}

@@ -9,6 +9,7 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
   --bg: #f7f8fa;
@@ -923,33 +924,95 @@ function SensitivityTable({ state }) {
   );
 }
 
+// ---- SUPABASE CLIENT ----
+const SUPABASE_URL = 'https://wsucqpunleplgyrrroae.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzdWNxcHVubGVwbGd5cnJyb2FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzI3NjksImV4cCI6MjA5MDAwODc2OX0.u82WmoJh-S8eGSrZXCb3XCbSueRkqUskyT_M0TrnVcY';
+const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
+
 // ---- MAIN APP ----
 function App() {
-  const [state, setState] = useState(() => {
-    try {
-      const saved = localStorage.getItem('rrcTournamentDashboard_v3');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (parsed.brandPartners && parsed.communityPartners) return parsed;
+  const [state, setState] = useState(initialState);
+  const [cloudStatus, setCloudStatus] = useState('');
+
+  // Load from Supabase on mount (fall back to localStorage)
+  useEffect(() => {
+    async function loadOnMount() {
+      if (supabase) {
+        try {
+          const { data, error } = await supabase
+            .from('rrc_dashboard_configs')
+            .select('config')
+            .eq('config_name', 'default')
+            .single();
+          if (!error && data && data.config && data.config.brandPartners) {
+            setState(data.config);
+            setCloudStatus('Loaded from cloud');
+            setTimeout(() => setCloudStatus(''), 3000);
+            return;
+          }
+        } catch(e) {}
       }
-    } catch(e) {}
-    return initialState;
-  });
+      // Fallback: localStorage
+      try {
+        const saved = localStorage.getItem('rrcTournamentDashboard_v3');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.brandPartners && parsed.communityPartners) setState(parsed);
+        }
+      } catch(e) {}
+    }
+    loadOnMount();
+  }, []);
 
   const metrics = computeMetrics(state);
   const dist = computePrizeDistribution(metrics.prizePoolAmount);
 
-  // Save/Load
-  const saveConfig = () => {
+  // Save/Load - Supabase with localStorage fallback
+  const saveConfig = async () => {
+    // Always save to localStorage as backup
     localStorage.setItem('rrcTournamentDashboard_v3', JSON.stringify(state));
-    alert('Configuration saved!');
+    if (supabase) {
+      try {
+        setCloudStatus('Saving...');
+        const { error } = await supabase
+          .from('rrc_dashboard_configs')
+          .upsert({ config_name: 'default', config: state }, { onConflict: 'config_name' });
+        if (error) throw error;
+        setCloudStatus('Saved to cloud');
+        setTimeout(() => setCloudStatus(''), 3000);
+      } catch(e) {
+        setCloudStatus('Saved locally (cloud error)');
+        setTimeout(() => setCloudStatus(''), 4000);
+      }
+    } else {
+      setCloudStatus('Saved to browser');
+      setTimeout(() => setCloudStatus(''), 3000);
+    }
   };
-  const loadConfig = () => {
+
+  const loadConfig = async () => {
+    if (!window.confirm('Load saved configuration? Current changes will be lost.')) return;
+    if (supabase) {
+      try {
+        setCloudStatus('Loading...');
+        const { data, error } = await supabase
+          .from('rrc_dashboard_configs')
+          .select('config')
+          .eq('config_name', 'default')
+          .single();
+        if (!error && data && data.config && data.config.brandPartners) {
+          setState(data.config);
+          setCloudStatus('Loaded from cloud');
+          setTimeout(() => setCloudStatus(''), 3000);
+          return;
+        }
+      } catch(e) {}
+    }
+    // Fallback: localStorage
     const saved = localStorage.getItem('rrcTournamentDashboard_v3');
     if (saved) {
-      if (window.confirm('Load saved configuration? Current changes will be lost.')) {
-        try { setState(JSON.parse(saved)); } catch(e) { alert('Could not load config'); }
-      }
+      try { setState(JSON.parse(saved)); setCloudStatus('Loaded from browser'); setTimeout(() => setCloudStatus(''), 3000); }
+      catch(e) { alert('Could not load config'); }
     } else { alert('No saved config found'); }
   };
   const exportJSON = () => {
@@ -1659,12 +1722,13 @@ function App() {
             </div>
             <div className="section-label">Configuration</div>
             <div className="dl-btn-row">
-              <button className="dl-btn purple" onClick={saveConfig}>Save to Browser</button>
-              <button className="dl-btn amber" onClick={loadConfig}>Load from Browser</button>
+              <button className="dl-btn purple" onClick={saveConfig}>Save to Cloud</button>
+              <button className="dl-btn amber" onClick={loadConfig}>Load from Cloud</button>
               <button className="dl-btn blue" onClick={exportJSON}>Export JSON</button>
               <button className="dl-btn green" onClick={() => importRef.current && importRef.current.click()}>Import JSON</button>
               <input ref={importRef} type="file" accept=".json" style={{display:'none'}} onChange={importJSON} />
             </div>
+            {cloudStatus && <div style={{marginTop:8, fontSize:12, color:'var(--green-mid)', fontWeight:500}}>{cloudStatus}</div>}
           </div>
 
         </div>
@@ -1672,8 +1736,8 @@ function App() {
 
       {/* LEFT STICKY FOOTER */}
       <div className="left-sticky-footer">
-        <button className="dl-btn purple" style={{height:36, fontSize:12}} onClick={saveConfig}>Save</button>
-        <button className="dl-btn amber" style={{height:36, fontSize:12}} onClick={loadConfig}>Load</button>
+        <button className="dl-btn purple" style={{height:36, fontSize:12}} onClick={saveConfig}>Save Cloud</button>
+        <button className="dl-btn amber" style={{height:36, fontSize:12}} onClick={loadConfig}>Load Cloud</button>
         <button className="dl-btn blue" style={{height:36, fontSize:12}} onClick={exportJSON}>Export</button>
         <button className="dl-btn green" style={{height:36, fontSize:12}} onClick={() => importRef.current && importRef.current.click()}>Import</button>
         <div style={{flex:1}} />
