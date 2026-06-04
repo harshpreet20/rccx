@@ -35,19 +35,19 @@ input:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3p
 input[type="range"] { width: 100%; accent-color: var(--blue-mid); }
 button { cursor: pointer; }
 .sticky-header {
-  position: fixed; top: 0; left: 0; right: 0; height: 60px; z-index: 100;
+  position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 100;
   background: var(--surface); border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; padding: 0 20px; gap: 16px;
+  display: flex; align-items: center; padding: 0 14px; gap: 10px;
 }
-.header-logo { font-size: 18px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
-.header-subtitle { font-size: 12px; color: var(--text-secondary); white-space: nowrap; }
+.header-logo { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.header-subtitle { display: none; }
 .header-spacer { flex: 1; }
 .header-tag {
   background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe;
-  border-radius: 20px; padding: 3px 12px; font-size: 12px; font-weight: 600;
+  border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 600; white-space: nowrap;
 }
 .main-layout {
-  margin-top: 60px; height: calc(100vh - 60px); display: flex;
+  margin-top: 44px; height: calc(100vh - 44px); display: flex;
 }
 .left-col {
   width: 37%; overflow-y: auto; border-right: 1px solid var(--border);
@@ -231,7 +231,7 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .mrs-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600; }
 .mrs-value { font-size: 15px; font-weight: 700; margin-top: 2px; }
 @media (max-width: 768px) {
-  .main-layout { flex-direction: column; height: calc(100vh - 60px - 56px); overflow: hidden; }
+  .main-layout { flex-direction: column; height: calc(100vh - 44px - 56px); overflow: hidden; }
   .left-col { width: 100%; border-right: none; height: 100%; display: none; padding-bottom: 16px; overflow-y: auto; }
   .left-col.tab-active { display: block; overflow-y: auto; }
   .right-col { width: 100%; height: 100%; display: none; overflow-y: auto; }
@@ -1150,14 +1150,11 @@ function App() {
     <div>
       {/* HEADER */}
       <div className="sticky-header">
-        <div>
-          <div className="header-logo">RRC Tournament Planner</div>
-          <div className="header-subtitle">Financial Planning Dashboard</div>
-        </div>
-        <div className="event-name-edit">
+        <div className="header-logo">RRC</div>
+        <div className="event-name-edit" style={{flex:1, maxWidth:260}}>
           <input type="text" value={state.eventName}
             onChange={e => upd('eventName', e.target.value)}
-            style={{fontWeight:600, fontSize:14}} />
+            style={{fontWeight:600, fontSize:13, height:30, border:'none', background:'transparent', padding:'0 4px'}} />
         </div>
         <div className="header-spacer" />
         <span className="header-tag">{state.eventDays}-Day Event</span>
