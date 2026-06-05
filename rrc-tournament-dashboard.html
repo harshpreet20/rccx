@@ -404,9 +404,19 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
   .partner-summary-table td:nth-child(7),
   .partner-summary-table th:nth-child(8),
   .partner-summary-table td:nth-child(8) { display: none; }
-  .left-col { width: 100%; border-right: none; height: 100%; display: none; padding-bottom: 16px; overflow-y: auto; }
-  .left-col.tab-active { display: block; overflow-y: auto; }
-  .right-col { width: 100%; height: 100%; display: none; overflow-y: auto; }
+  /* Safe-area-aware layout: header(44) + tab bar(56) + safe area inset */
+  .main-layout { height: calc(100vh - 44px - 56px - env(safe-area-inset-bottom, 0px)); overflow: hidden; }
+  .left-col {
+    width: 100%; border-right: none; height: 100%; display: none;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px)) 12px;
+  }
+  .left-col.tab-active { display: block; }
+  .right-col {
+    width: 100%; height: 100%; display: none;
+    overflow-y: auto; -webkit-overflow-scrolling: touch;
+    padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px)) 12px;
+  }
   .right-col.tab-active { display: block; }
   .left-sticky-footer { display: none; }
   .mobile-tab-bar { display: flex; }
@@ -414,33 +424,38 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
   .metric-grid { grid-template-columns: 1fr 1fr; }
   .metric-grid .metric-card:first-child { grid-column: 1 / -1; }
   .tables-row { grid-template-columns: 1fr; }
-  input[type="text"], input[type="number"] { height: 44px; font-size: 16px; }
+  input[type="text"], input[type="number"] { height: 44px; }
   .seg-btn { height: 44px; }
   .stepper-btn { width: 44px; height: 44px; }
   .stepper-val { height: 44px; }
   .toggle { width: 48px; height: 26px; }
   .section-header { min-height: 48px; padding: 14px 0; }
   .field-label { font-size: 13px; }
-  /* Ensure nothing is clipped under tab bar */
-  .left-col, .right-col { padding-bottom: 80px !important; }
-  /* Inputs: 16px prevents iOS auto-zoom */
-  input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea {
-    font-size: 16px !important;
-  }
-  /* Franchise card: tighter on small screens */
+  /* 16px on ALL inputs prevents iOS auto-zoom */
+  input, select, textarea { font-size: 16px !important; }
   .franchise-card { padding: 12px; }
-  /* Metric cards: consistent height */
   .metric-card { min-height: 72px; }
-  /* earnings big number: smaller on mobile */
   .earnings-big { font-size: 32px; }
-  /* Remove horizontal overflow on charts */
   .chart-wrap { overflow: hidden; }
-  /* Full-width buttons on mobile */
-  .generate-btn { font-size: 14px; }
-  /* Tab bar: safe area for notched phones */
-  .mobile-tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); height: calc(56px + env(safe-area-inset-bottom, 0px)); }
-  /* Franchise owner tab bar same */
-  .fo-tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); height: calc(56px + env(safe-area-inset-bottom, 0px)); }
+  .generate-btn { font-size: 14px; width: 100%; }
+  /* Tab bars: full safe area */
+  .mobile-tab-bar {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+  .fo-tab-bar {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+  /* Franchise owner full-screen layout */
+  .fo-body {
+    padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px)) 12px;
+    min-height: calc(100vh - 44px - 56px - env(safe-area-inset-bottom, 0px));
+  }
+  /* Chat FAB above tab bar */
+  .chat-fab { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  /* Chat panel clears tab bar */
+  .chat-panel { bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>
 </head>
@@ -551,10 +566,9 @@ function computeMetrics(state) {
   const contingencyAmount = preContingencyTotal * (costs.contingencyPct / 100);
   const totalCosts = preContingencyTotal + contingencyAmount;
   const grossSurplus = totalRevenue - totalCosts;
-  const prizePoolAmount = (prizePool.enabled && grossSurplus > 0)
-    ? Math.min(grossSurplus * prizePool.pct / 100, grossSurplus)
-    : 0;
-  const netAfterPrizes = grossSurplus - prizePoolAmount;
+  // Prize money is now a fixed cost line item (Rs 45,000) - not deducted from surplus here
+  const prizePoolAmount = 0;
+  const netAfterPrizes = grossSurplus;
   const mgmtFee = costs.oneTime.find(c => c.id === 'mgmtFee')?.amount ?? 50000;
   const rrcEarnings = mgmtFee + netAfterPrizes;
   return {
