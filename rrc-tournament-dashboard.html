@@ -566,8 +566,8 @@ function computeMetrics(state) {
   const contingencyAmount = preContingencyTotal * (costs.contingencyPct / 100);
   const totalCosts = preContingencyTotal + contingencyAmount;
   const grossSurplus = totalRevenue - totalCosts;
-  // Prize money is now a fixed cost line item (Rs 45,000) - not deducted from surplus here
-  const prizePoolAmount = 0;
+  // Prize money is a fixed cost line item - use actual amount for distribution calculations
+  const prizePoolAmount = costs.oneTime.find(c => c.id === 'prizes')?.amount ?? 45000;
   const netAfterPrizes = grossSurplus;
   const mgmtFee = costs.oneTime.find(c => c.id === 'mgmtFee')?.amount ?? 50000;
   const rrcEarnings = mgmtFee + netAfterPrizes;
@@ -1046,7 +1046,7 @@ function RevenueChart({ metrics, state }) {
   const chartRef = useRef(null);
   useEffect(() => {
     if (!window.Chart || !chartRef.current) return;
-    if (chartRef.current._chartInstance) {
+    if (chartRef.current && chartRef.current._chartInstance) {
       chartRef.current._chartInstance.destroy();
       chartRef.current._chartInstance = null;
     }
@@ -1090,7 +1090,7 @@ function CostsChart({ metrics, state }) {
   const chartRef = useRef(null);
   useEffect(() => {
     if (!window.Chart || !chartRef.current) return;
-    if (chartRef.current._chartInstance) {
+    if (chartRef.current && chartRef.current._chartInstance) {
       chartRef.current._chartInstance.destroy();
       chartRef.current._chartInstance = null;
     }
@@ -2958,7 +2958,7 @@ Return a JSON object with this exact structure:
 
           {/* P&L Summary */}
           <div className="card" style={{marginTop:12}}>
-            <div className="chart-title">P&amp;L Summary</div>
+            <div className="chart-title">P&L Summary</div>
             {[
               ['Total Revenue', formatINR(metrics.totalRevenue), false],
               ['Total Costs', `(${formatINR(metrics.totalCosts)})`, false],
@@ -2995,7 +2995,7 @@ Return a JSON object with this exact structure:
                 Partner Pitch Pack (.xlsx)
               </button>
               <button className="dl-btn green" onClick={() => buildEventPL(state, metrics)}>
-                Full Event P&amp;L (.xlsx)
+                Full Event P&L (.xlsx)
               </button>
             </div>
             <div className="section-label">Configuration</div>
