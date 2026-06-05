@@ -1968,6 +1968,24 @@ function App() {
         if (error) throw error;
         setCloudStatus('Saved to cloud');
         setTimeout(() => setCloudStatus(''), 3000);
+        // Fire-and-forget training update
+        fetch('/api/train', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tournamentData: {
+              eventName: state.eventName,
+              eventDays: state.eventDays,
+              totalPartners: state.brandPartners.length + state.communityPartners.length,
+              brandPartners: state.brandPartners.map(p => ({name: p.name, fee: p.fee, pairs: p.pairsPerPartner})),
+              communityPartners: state.communityPartners.map(p => ({name: p.name, fee: p.fee})),
+              prizes: { first: 25000, second: 15000, third: 5000 },
+              registrationFee: 5000,
+              totalRevenue: metrics.totalRevenue,
+              totalCosts: metrics.totalCosts,
+            }
+          }),
+        }).catch(() => {}); // silent fail
       } catch(e) {
         setCloudStatus('Saved locally (cloud error)');
         setTimeout(() => setCloudStatus(''), 4000);
@@ -2034,6 +2052,109 @@ function App() {
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  // Chat role and context
+  const chatRole = userRole === 'organizer' ? 'organizer' : userRole === 'franchise_owner' ? 'franchise_owner' : 'public';
+  const chatContext = userRole === 'organizer' ? {
+    eventName: state.eventName,
+    eventDays: state.eventDays,
+    totalRevenue: metrics.totalRevenue,
+    totalCosts: metrics.totalCosts,
+    rrcEarnings: metrics.rrcEarnings,
+    totalPartners: state.brandPartners.length + state.communityPartners.length,
+    totalPlayers: metrics.totalPlayers,
+  } : userRole === 'franchise_owner' ? {
+    eventName: state.eventName,
+    franchiseName: franchiseProfile?.franchise_label,
+    partnerType: franchiseProfile?.partner_type,
+    prizes: { first: 25000, second: 15000, third: 5000 },
+  } : {
+    eventName: state.eventName,
+    format: 'Doubles badminton, group stage + knockout',
+    prizes: { first: 25000, second: 15000, third: 5000 },
+    registrationFee: 5000,
+  };
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || chatLoading || chatTimeout > 0) return;
+    const userMsg = chatInput.trim();
+    setChatInput('');
+    setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
+    setChatLoading(true);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMsg,
+          role: chatRole,
+          context: chatContext,
+          clientId: clientId.current,
+        }),
+      });
+      const data = await res.json();
+      if (res.status === 429) {
+        const secs = data.timeoutSeconds || 30;
+        setChatTimeout(secs);
+        const interval = setInterval(() => {
+          setChatTimeout(prev => { if (prev <= 1) { clearInterval(interval); return 0; } return prev - 1; });
+        }, 1000);
+        setChatMessages(prev => [...prev, { role: 'assistant', content: data.message, isTimeout: true }]);
+      } else if (data.error) {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
+      } else {
+        setChatMessages(prev => [...prev, { role: 'assistant', content: data.message, model: data.model }]);
+      }
+    } catch(e) {
+      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Try again.' }]);
+    }
+    setChatLoading(false);
+    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
+  };
+
+  // AI document generation
+  const downloadAIDoc = async (docType) => {
+    setDocGenLoading(docType);
+    try {
+      const eventData = {
+        eventName: state.eventName,
+        eventDays: state.eventDays,
+        totalPartners: state.brandPartners.length + state.communityPartners.length,
+        brandCount: state.brandPartners.length,
+        communityCount: state.communityPartners.length,
+        totalPlayers: metrics.totalPlayers,
+        brandPairs: metrics.totalBrandPairs,
+        brandRevenue: formatINR(metrics.brandPartnerRevenue),
+        communityRevenue: formatINR(metrics.communityPartnerRevenue),
+        playerFeeRevenue: formatINR(metrics.playerFeeRevenue),
+        registrationRevenue: formatINR((state.brandPartners.length + state.communityPartners.length) * 5000),
+        vendorRevenue: formatINR(metrics.vendorRevenue),
+        sundownerRevenue: formatINR(metrics.sundDownerRevenue),
+        totalRevenue: formatINR(metrics.totalRevenue),
+        totalCosts: formatINR(metrics.totalCosts),
+        grossSurplus: formatINR(metrics.grossSurplus),
+        rrcEarnings: formatINR(metrics.rrcEarnings),
+        targetEarnings: formatINR(state.targetEarnings),
+        costsBreakdown: state.costs.oneTime.map(c => `- ${c.label}: ${formatINR(c.amount)}`).join('\n')
+          + '\n' + state.costs.perDay.map(c => `- ${c.label} (x${state.eventDays} days): ${formatINR(c.amount * state.eventDays)}`).join('\n'),
+      };
+      const res = await fetch('/api/generate-doc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ docType, eventData }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      const blob = new Blob([data.html], { type: 'text/html' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${state.eventName.replace(/\s+/g, '-')}-${docType}-${new Date().toISOString().slice(0,10)}.html`;
+      a.click();
+    } catch(e) {
+      alert(`Document generation failed: ${e.message}`);
+    }
+    setDocGenLoading('');
   };
 
   // State helpers
@@ -2844,7 +2965,17 @@ Return a JSON object with this exact structure:
 
           {/* Download Buttons */}
           <div style={{marginTop:16}}>
-            <div className="section-label">Export Reports</div>
+            <div className="section-label">Export Reports (AI)</div>
+            <div className="dl-btn-row">
+              <button className="dl-btn blue" onClick={() => downloadAIDoc('partner_pitch')} disabled={docGenLoading==='partner_pitch'}>
+                {docGenLoading==='partner_pitch' ? 'Generating...' : 'Partner Pitch (AI)'}
+              </button>
+              <button className="dl-btn green" onClick={() => downloadAIDoc('event_pl')} disabled={docGenLoading==='event_pl'}>
+                {docGenLoading==='event_pl' ? 'Generating...' : 'Event P&L (AI)'}
+              </button>
+            </div>
+            <div style={{fontSize:11, color:'var(--text-muted)', marginBottom:8}}>Powered by Claude - generates print-ready HTML documents</div>
+            <div className="section-label">Export Reports (Excel fallback)</div>
             <div className="dl-btn-row">
               <button className="dl-btn blue" onClick={() => buildPartnerPitchPack(state, metrics)}>
                 Partner Pitch Pack (.xlsx)
@@ -3196,6 +3327,50 @@ Return a JSON object with this exact structure:
             </div>
           )}
 
+        </div>
+      </div>
+
+      {/* CHATBOT */}
+      <button className="chat-fab" onClick={() => setChatOpen(o => !o)}>
+        {chatOpen ? '✕' : '🤖'}
+      </button>
+      <div className={`chat-panel ${chatOpen ? 'open' : ''}`}>
+        <div className="chat-header">
+          <span style={{fontSize:20}}>🏸</span>
+          <span className="chat-header-title">RRC Assistant</span>
+          <span className={`chat-header-role ${chatRole}`}>
+            {chatRole === 'organizer' ? 'Organizer' : chatRole === 'franchise_owner' ? 'Franchise' : 'Public'}
+          </span>
+          <button onClick={() => setChatOpen(false)} style={{border:'none', background:'transparent', fontSize:18, cursor:'pointer', color:'var(--text-muted)', padding:4}}>✕</button>
+        </div>
+        {chatTimeout > 0 && (
+          <div style={{background:'var(--amber-bg)', padding:'6px 16px', fontSize:12, color:'var(--amber)', fontWeight:600}}>
+            Please wait {chatTimeout}s before asking another question
+          </div>
+        )}
+        <div className="chat-messages">
+          {chatMessages.map((m, i) => (
+            <div key={i} className={`chat-msg ${m.role} ${m.isTimeout ? 'timeout' : ''}`}>
+              {m.content}
+              {m.model && <div className="chat-model-badge">via {m.model === 'claude' ? 'Claude' : 'GPT-4o'}</div>}
+            </div>
+          ))}
+          {chatLoading && (
+            <div className="chat-msg assistant" style={{color:'var(--text-muted)'}}>Thinking...</div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+        <div className="chat-input-row">
+          <input
+            type="text" value={chatInput}
+            onChange={e => setChatInput(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
+            placeholder={chatTimeout > 0 ? `Wait ${chatTimeout}s...` : 'Ask about the tournament...'}
+            disabled={chatLoading || chatTimeout > 0}
+          />
+          <button className="chat-send-btn" onClick={sendChatMessage} disabled={chatLoading || chatTimeout > 0 || !chatInput.trim()}>
+            &#x27A4;
+          </button>
         </div>
       </div>
 
