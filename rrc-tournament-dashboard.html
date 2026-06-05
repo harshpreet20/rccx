@@ -245,6 +245,35 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .value-badge.value { background: var(--green-bg); color: var(--green); }
 .value-badge.premium { background: var(--amber-bg); color: var(--amber); }
 
+/* Bracket CSS */
+.bracket-tree { display: flex; gap: 0; overflow-x: auto; padding: 16px 0; }
+.bracket-round { display: flex; flex-direction: column; justify-content: space-around; min-width: 150px; padding: 0 8px; }
+.bracket-round-title { font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; text-align: center; margin-bottom: 12px; }
+.bracket-match { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px; margin: 4px 0; font-size: 12px; position: relative; }
+.bracket-match.my-match { border-color: var(--blue-mid); background: var(--blue-bg); }
+.bracket-match.won { border-color: var(--green-mid); background: var(--green-bg); }
+.bracket-team { padding: 3px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+.bracket-team:last-child { border-bottom: none; }
+.bracket-team.winner { font-weight: 700; color: var(--green-mid); }
+.bracket-connector { width: 16px; border-top: 2px solid var(--border); align-self: center; }
+/* FO App */
+.fo-header { position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 10px; }
+.fo-body { margin-top: 44px; padding: 16px; padding-bottom: 80px; max-width: 600px; margin-left: auto; margin-right: auto; }
+.fo-tab-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: var(--surface); border-top: 1px solid var(--border); z-index: 100; }
+.fo-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: none; background: transparent; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+.fo-tab.active { color: var(--blue-mid); border-top: 2px solid var(--blue-mid); }
+.fo-tab-icon { font-size: 18px; }
+.pair-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+.pair-card-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
+.player-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.player-row input { flex: 1; }
+.player-committed-btn { height: 36px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.player-committed-btn.on { background: var(--green-bg); color: var(--green); border-color: var(--green-mid); }
+.reg-pending-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 10px; }
+/* Organizer league tab */
+.league-section { margin-bottom: 20px; }
+.league-section-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
+
 /* Schedule predictor */
 .schedule-section { }
 .day-timeline { display: flex; height: 64px; border-radius: 8px; overflow: hidden; margin: 12px 0; }
@@ -389,6 +418,7 @@ const initialState = {
       { id: "rainShower", label: "Rain shower installation", amount: 10000, deletable: true },
       { id: "trophies", label: "Trophies and medals", amount: 14000, deletable: true },
       { id: "mgmtFee", label: "Organizer management fee", amount: 50000, deletable: false },
+      { id: "prizes", label: "Prize money (1st + 2nd + 3rd)", amount: 45000, deletable: false },
     ],
     perDay: [
       { id: "courts", label: "Court rental (4 courts x 10hrs x Rs 500)", amount: 20000, deletable: false },
@@ -435,8 +465,9 @@ function computeMetrics(state) {
     ? (sundowner.generalAttendees * sundowner.generalTicketPrice)
       + (sundowner.vipEnabled ? sundowner.vipAttendees * sundowner.vipTicketPrice : 0)
     : 0;
+  const registrationFeeRevenue = (brandPartners.length + communityPartners.length) * 5000;
   const totalRevenue = brandPartnerRevenue + communityPartnerRevenue + playerFeeRevenue
-    + paidSponsorRevenue + barterValue + vendorRevenue + sundDownerRevenue;
+    + paidSponsorRevenue + barterValue + vendorRevenue + sundDownerRevenue + registrationFeeRevenue;
   const perDayCostSubtotal = costs.perDay.reduce((s, c) => {
     if (c.id === 'coffeeMist' && sponsorship.barterCoffee.enabled) return s;
     return s + c.amount;
@@ -458,6 +489,7 @@ function computeMetrics(state) {
     totalBrandPairs, totalCommunityPairs,
     playerFeeRevenue, brandPartnerRevenue, communityPartnerRevenue,
     paidSponsorRevenue, barterValue, vendorRevenue, sundDownerRevenue,
+    registrationFeeRevenue,
     totalRevenue, perDayCostSubtotal, oneTimeCostSubtotal,
     preContingencyTotal, contingencyAmount, totalCosts,
     grossSurplus, prizePoolAmount, netAfterPrizes, mgmtFee, rrcEarnings,
@@ -1062,12 +1094,679 @@ const SUPABASE_URL = 'https://wsucqpunleplgyrrroae.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndzdWNxcHVubGVwbGd5cnJyb2FlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ0MzI3NjksImV4cCI6MjA5MDAwODc2OX0.u82WmoJh-S8eGSrZXCb3XCbSueRkqUskyT_M0TrnVcY';
 const supabase = window.supabase ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null;
 
+// ---- AUTH SCREEN ----
+function AuthScreen({ authView, setAuthView }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  const handleLogin = async () => {
+    setLoading(true); setError('');
+    const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+    if (err) setError(err.message);
+    setLoading(false);
+  };
+
+  const handleSignup = async () => {
+    setLoading(true); setError('');
+    const { error: err } = await supabase.auth.signUp({ email, password });
+    if (err) setError(err.message);
+    else setSuccess('Check your email to confirm your account, then log in.');
+    setLoading(false);
+  };
+
+  return (
+    <div style={{minHeight:'100vh', background:'var(--bg)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:20}}>
+      <div style={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:32, width:'100%', maxWidth:400}}>
+        <div style={{textAlign:'center', marginBottom:24}}>
+          <div style={{fontSize:32, marginBottom:8}}>🏸</div>
+          <div style={{fontSize:22, fontWeight:800, color:'var(--text-primary)'}}>RRC Doubles Cup</div>
+          <div style={{fontSize:13, color:'var(--text-secondary)', marginTop:4}}>Season 1 - League Platform</div>
+        </div>
+        <div className="seg-btns" style={{marginBottom:20}}>
+          <button className={`seg-btn ${authView==='login'?'active':''}`} onClick={()=>setAuthView('login')}>Log In</button>
+          <button className={`seg-btn ${authView==='signup'?'active':''}`} onClick={()=>setAuthView('signup')}>Sign Up</button>
+        </div>
+        {error && <div style={{background:'var(--red-bg)', color:'var(--red-mid)', padding:'8px 12px', borderRadius:6, fontSize:13, marginBottom:12}}>{error}</div>}
+        {success && <div style={{background:'var(--green-bg)', color:'var(--green-mid)', padding:'8px 12px', borderRadius:6, fontSize:13, marginBottom:12}}>{success}</div>}
+        <div className="field-row">
+          <label className="field-label">Email</label>
+          <input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" />
+        </div>
+        <div className="field-row" style={{marginTop:10}}>
+          <label className="field-label">Password</label>
+          <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="password"
+            onKeyDown={e=>e.key==='Enter'&&(authView==='login'?handleLogin():handleSignup())} />
+        </div>
+        <button onClick={authView==='login'?handleLogin:handleSignup} disabled={loading}
+          style={{width:'100%', height:44, background:'var(--blue-mid)', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:700, cursor:'pointer', marginTop:16, opacity:loading?0.7:1}}>
+          {loading ? 'Please wait...' : authView==='login' ? 'Log In' : 'Create Account'}
+        </button>
+        <div style={{marginTop:20, padding:'12px', background:'var(--blue-bg)', borderRadius:8, fontSize:12, color:'var(--text-secondary)'}}>
+          <strong style={{color:'var(--blue)'}}>Organizer?</strong> Contact the admin to get your organizer account set up.<br/><br/>
+          <strong style={{color:'var(--blue)'}}>Franchise owner?</strong> Sign up above, then register your franchise for Rs 5,000 to get full access.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---- FRANCHISE REGISTRATION SCREEN ----
+function FranchiseRegistrationScreen({ user, state, onComplete }) {
+  const [partnerType, setPartnerType] = useState('brand');
+  const [partnerName, setPartnerName] = useState('');
+  const [franchiseLabel, setFranchiseLabel] = useState('');
+  const [paymentRef, setPaymentRef] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleRegister = async () => {
+    if (!partnerName) { setError('Please select your franchise'); return; }
+    setLoading(true); setError('');
+    try {
+      const { data: fo, error: foErr } = await supabase.from('rrc_franchise_owners').insert({
+        user_id: user.id,
+        partner_type: partnerType,
+        partner_name: partnerName,
+        franchise_label: franchiseLabel || partnerName,
+        registration_paid: false,
+        registration_fee: 5000,
+      }).select().single();
+      if (foErr) throw foErr;
+      await supabase.from('rrc_registration_payments').insert({
+        franchise_owner_id: fo.id,
+        amount: 5000,
+        payment_ref: paymentRef || null,
+      });
+      onComplete(fo);
+    } catch(e) { setError(e.message); }
+    setLoading(false);
+  };
+
+  return (
+    <div style={{minHeight:'100vh', background:'var(--bg)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:20}}>
+      <div style={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:16, padding:32, width:'100%', maxWidth:440}}>
+        <div style={{textAlign:'center', marginBottom:24}}>
+          <div style={{fontSize:32}}>🏅</div>
+          <div style={{fontSize:20, fontWeight:800}}>Register Your Franchise</div>
+          <div style={{fontSize:13, color:'var(--text-secondary)', marginTop:4}}>Join the RRC Doubles Cup League</div>
+        </div>
+        <div style={{background:'var(--amber-bg)', border:'1px solid #fcd34d', borderRadius:8, padding:'10px 14px', fontSize:13, color:'var(--amber)', marginBottom:16}}>
+          Registration fee: <strong>Rs 5,000</strong>. This confirms your franchise slot in the league. Organizer will approve your registration once payment is confirmed.
+        </div>
+        {error && <div style={{background:'var(--red-bg)', color:'var(--red-mid)', padding:'8px 12px', borderRadius:6, fontSize:13, marginBottom:12}}>{error}</div>}
+        <div className="field-row">
+          <label className="field-label">Select Your Franchise</label>
+          <select value={partnerName} onChange={e=>{
+            const allP = [...state.brandPartners.map(p=>({...p,type:'brand'})), ...state.communityPartners.map(p=>({...p,type:'community'}))];
+            const sel = allP.find(p=>p.name===e.target.value);
+            setPartnerName(e.target.value);
+            if (sel) setPartnerType(sel.type);
+          }} style={{height:44, border:'1px solid var(--border)', borderRadius:6, padding:'0 10px', width:'100%', fontSize:14, background:'var(--surface)'}}>
+            <option value="">-- Select your franchise --</option>
+            {state.brandPartners.map(p=><option key={p.id} value={p.name}>[Brand] {p.name}</option>)}
+            {state.communityPartners.map(p=><option key={p.id} value={p.name}>[Community] {p.name}</option>)}
+          </select>
+          <span className="field-hint">Choose the franchise you are registering as owner for</span>
+        </div>
+        <div className="field-row" style={{marginTop:10}}>
+          <label className="field-label">Franchise Display Name (optional)</label>
+          <input type="text" value={franchiseLabel} onChange={e=>setFranchiseLabel(e.target.value)} placeholder={partnerName || 'e.g. Rohini Rockets'} />
+          <span className="field-hint">Custom name shown on brackets and fixtures</span>
+        </div>
+        <div className="field-row" style={{marginTop:10}}>
+          <label className="field-label">Payment Reference (UPI/Bank)</label>
+          <input type="text" value={paymentRef} onChange={e=>setPaymentRef(e.target.value)} placeholder="e.g. UPI txn ID or bank ref" />
+          <span className="field-hint">Share this with the organizer to confirm your Rs 5,000 payment</span>
+        </div>
+        <button onClick={handleRegister} disabled={loading}
+          style={{width:'100%', height:44, background:'var(--blue-mid)', color:'#fff', border:'none', borderRadius:8, fontSize:15, fontWeight:700, cursor:'pointer', marginTop:16}}>
+          {loading ? 'Registering...' : 'Submit Registration - Rs 5,000'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---- EARNINGS CHART (CSS bars) ----
+function EarningsChart({ investedTotal }) {
+  const prizes = { first: 25000, second: 15000, third: 5000 };
+  const maxVal = Math.max(investedTotal, 1);
+  const bars = [
+    { label: 'Total Invested', value: investedTotal, color: 'var(--red-mid)' },
+    { label: 'Net if 1st', value: Math.max(0, investedTotal - prizes.first), color: 'var(--green-mid)' },
+    { label: 'Net if 2nd', value: Math.max(0, investedTotal - prizes.second), color: 'var(--amber-mid)' },
+    { label: 'Net if 3rd', value: Math.max(0, investedTotal - prizes.third), color: 'var(--blue-mid)' },
+  ];
+  return (
+    <div style={{display:'flex', gap:12, alignItems:'flex-end', height:160, marginTop:16}}>
+      {bars.map(b => (
+        <div key={b.label} style={{flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:4}}>
+          <div style={{fontSize:11, fontWeight:700, color:b.color}}>{formatINR(b.value)}</div>
+          <div style={{width:'100%', background:b.color, borderRadius:'4px 4px 0 0',
+            height: `${(b.value / maxVal) * 120}px`, transition:'height 0.5s', minHeight:4}} />
+          <div style={{fontSize:10, color:'var(--text-secondary)', textAlign:'center', lineHeight:1.2}}>{b.label}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ---- BRACKET RENDERER ----
+function BracketRenderer({ fixtures, myFranchiseName }) {
+  if (!fixtures) return <div style={{color:'var(--text-secondary)', fontSize:13}}>Fixtures will be published by the organizer soon.</div>;
+  const { groups, knockout } = fixtures;
+  return (
+    <div>
+      {groups && groups.length > 0 && (
+        <div style={{marginBottom:16}}>
+          <div style={{fontWeight:700, fontSize:13, marginBottom:10}}>Group Stage</div>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(160px,1fr))', gap:10}}>
+            {groups.map(g => (
+              <div key={g.name} style={{background:'var(--surface)', border:'1px solid var(--border)', borderRadius:8, padding:10}}>
+                <div style={{fontWeight:700, fontSize:12, marginBottom:6, color:'var(--blue-mid)'}}>{g.name}</div>
+                {g.teams && g.teams.map(t => (
+                  <div key={t.name} style={{fontSize:12, padding:'3px 0', borderBottom:'1px solid var(--border)',
+                    fontWeight: t.name===myFranchiseName?700:400,
+                    color: t.name===myFranchiseName?'var(--blue-mid)':'var(--text-primary)'}}>
+                    {t.name===myFranchiseName?'>> ':''}{t.name}
+                  </div>
+                ))}
+                {g.matches && <div style={{fontSize:11, color:'var(--text-muted)', marginTop:4}}>{g.matches.length} matches</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {knockout && knockout.rounds && knockout.rounds.length > 0 && (
+        <div>
+          <div style={{fontWeight:700, fontSize:13, marginBottom:10}}>Knockout Stage</div>
+          <div className="bracket-tree">
+            {knockout.rounds.map(round => (
+              <div key={round.name} className="bracket-round">
+                <div className="bracket-round-title">{round.name}</div>
+                {round.matches && round.matches.map((m, i) => (
+                  <div key={i} className={`bracket-match ${(m.team1===myFranchiseName||m.team2===myFranchiseName)?'my-match':''} ${m.winner===myFranchiseName?'won':''}`}>
+                    <div className={`bracket-team ${m.winner===m.team1?'winner':''}`}>
+                      <span>{m.team1||'TBD'}</span>
+                      {m.score1!=null && <span>{m.score1}</span>}
+                    </div>
+                    <div className={`bracket-team ${m.winner===m.team2?'winner':''}`}>
+                      <span>{m.team2||'TBD'}</span>
+                      {m.score2!=null && <span>{m.score2}</span>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ---- FRANCHISE OWNER APP ----
+function FranchiseOwnerApp({ user, franchiseProfile, state, onSignOut }) {
+  const [foTab, setFoTab] = useState('home');
+  const [players, setPlayers] = useState([]);
+  const [fixtures, setFixtures] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [playerAwardEnabled, setPlayerAwardEnabled] = useState(false);
+  const [playerAwardBudget, setPlayerAwardBudget] = useState(0);
+  const [savingPairs, setSavingPairs] = useState({});
+
+  // Local pair editing state
+  const [pairData, setPairData] = useState({});
+
+  useEffect(() => { loadData(); }, []);
+
+  async function loadData() {
+    const { data: pl } = await supabase.from('rrc_franchise_players')
+      .select('*').eq('franchise_owner_id', franchiseProfile.id).order('pair_number,slot_in_pair');
+    setPlayers(pl || []);
+    // init pairData from loaded players
+    const pd = {};
+    (pl || []).forEach(p => {
+      if (!pd[p.pair_number]) pd[p.pair_number] = [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}];
+      pd[p.pair_number][p.slot_in_pair - 1] = { name: p.player_name||'', contact: p.player_contact||'', committed: p.committed||false, id: p.id };
+    });
+    setPairData(pd);
+    const { data: fx } = await supabase.from('rrc_tournament_fixtures').select('*').eq('config_name','default').single();
+    setFixtures(fx ? fx.fixtures : null);
+    setLoading(false);
+  }
+
+  // Find matching partner from state
+  const matchedPartner = [...state.brandPartners, ...state.communityPartners].find(p => p.name === franchiseProfile.partner_name);
+  const pairsCount = matchedPartner ? matchedPartner.pairsPerPartner : 1;
+  const franchiseFee = matchedPartner ? matchedPartner.fee : 0;
+  const investedTotal = franchiseFee + 5000; // franchise fee + registration fee
+  const totalPlayerSlots = pairsCount * 2;
+  const confirmedCount = players.filter(p => p.committed).length;
+
+  function initPairData(pairNum) {
+    if (!pairData[pairNum]) {
+      setPairData(prev => ({...prev, [pairNum]: [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}]}));
+    }
+  }
+
+  async function savePair(pairNum) {
+    setSavingPairs(prev => ({...prev, [pairNum]: true}));
+    const slots = pairData[pairNum] || [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}];
+    for (let i = 0; i < 2; i++) {
+      const sl = slots[i] || {name:'',contact:'',committed:false};
+      if (sl.id) {
+        await supabase.from('rrc_franchise_players').update({
+          player_name: sl.name, player_contact: sl.contact, committed: sl.committed,
+        }).eq('id', sl.id);
+      } else {
+        await supabase.from('rrc_franchise_players').insert({
+          franchise_owner_id: franchiseProfile.id,
+          pair_number: pairNum, slot_in_pair: i+1,
+          player_name: sl.name, player_contact: sl.contact, committed: sl.committed,
+        });
+      }
+    }
+    await loadData();
+    setSavingPairs(prev => ({...prev, [pairNum]: false}));
+  }
+
+  if (loading) return <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'var(--bg)'}}><div style={{fontSize:14,color:'var(--text-secondary)'}}>Loading...</div></div>;
+
+  const tierType = franchiseProfile.partner_type === 'brand' ? 'Brand' : 'Community';
+  const tierColor = franchiseProfile.partner_type === 'brand' ? 'var(--blue)' : 'var(--green)';
+  const tierBg = franchiseProfile.partner_type === 'brand' ? 'var(--blue-bg)' : 'var(--green-bg)';
+
+  return (
+    <div>
+      {/* Header */}
+      <div className="fo-header">
+        <div style={{fontWeight:800, fontSize:13}}>RRC</div>
+        <div style={{fontSize:13, fontWeight:600, flex:1, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>
+          {franchiseProfile.franchise_label || franchiseProfile.partner_name}
+        </div>
+        <span style={{background:tierBg, color:tierColor, border:`1px solid ${tierColor}`, borderRadius:20, padding:'2px 8px', fontSize:11, fontWeight:700, whiteSpace:'nowrap'}}>{tierType}</span>
+        <button onClick={onSignOut} style={{height:28, padding:'0 10px', border:'1px solid var(--border)', borderRadius:6, background:'transparent', fontSize:12, cursor:'pointer', color:'var(--text-secondary)', whiteSpace:'nowrap'}}>Sign Out</button>
+      </div>
+
+      {/* Body */}
+      <div className="fo-body">
+
+        {/* HOME TAB */}
+        {foTab === 'home' && (
+          <div>
+            {/* Franchise banner */}
+            <div style={{background:'var(--blue-mid)', borderRadius:12, padding:'20px 20px', marginBottom:16, color:'#fff'}}>
+              <div style={{fontSize:22, fontWeight:800}}>{franchiseProfile.franchise_label || franchiseProfile.partner_name}</div>
+              <div style={{fontSize:13, opacity:0.85, marginTop:4}}>{tierType} Franchise - RRC Doubles Cup Season 1</div>
+              <div style={{marginTop:10}}>
+                <span style={{background: franchiseProfile.registration_paid ? 'rgba(255,255,255,0.2)' : 'rgba(255,200,0,0.3)', borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:700}}>
+                  {franchiseProfile.registration_paid ? 'Registered' : 'Pending Approval'}
+                </span>
+              </div>
+            </div>
+
+            {/* Investment summary */}
+            <div className="card" style={{marginBottom:12}}>
+              <div className="chart-title">Investment Summary</div>
+              <div className="summary-row"><span className="label">Franchise fee</span><span className="value">{formatINR(franchiseFee)}</span></div>
+              <div className="summary-row"><span className="label">Registration fee</span><span className="value">Rs 5,000 {franchiseProfile.registration_paid ? '(paid)' : '(pending)'}</span></div>
+              <div className="summary-row" style={{borderTop:'2px solid var(--border-strong)', paddingTop:8, marginTop:4}}>
+                <span className="label" style={{fontWeight:700}}>Total invested</span>
+                <span className="value" style={{color:'var(--blue-mid)'}}>{formatINR(investedTotal)}</span>
+              </div>
+            </div>
+
+            {/* Prize potential */}
+            <div className="card" style={{marginBottom:12}}>
+              <div className="chart-title">Prize Potential</div>
+              <div style={{display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:12}}>
+                {[['1st', 25000, 'var(--amber-mid)'],['2nd', 15000, 'var(--text-secondary)'],['3rd', 5000, 'var(--amber)']].map(([pos, prize, color]) => (
+                  <div key={pos} style={{background:'var(--bg)', borderRadius:8, padding:'10px 8px', textAlign:'center'}}>
+                    <div style={{fontSize:20, marginBottom:4}}>{pos==='1st'?'🥇':pos==='2nd'?'🥈':'🥉'}</div>
+                    <div style={{fontWeight:700, color}}>{formatINR(prize)}</div>
+                    <div style={{fontSize:11, color:'var(--text-muted)'}}>{pos} Place</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{background:'var(--green-bg)', borderRadius:8, padding:'10px 12px'}}>
+                <div style={{fontSize:13, fontWeight:600, color:'var(--green)'}}>If you win 1st place:</div>
+                <div style={{fontSize:13, color:'var(--text-primary)'}}>Net cost = {formatINR(Math.max(0, investedTotal - 25000))} (Rs 25,000 back)</div>
+              </div>
+            </div>
+
+            {/* Player progress */}
+            <div className="card" style={{marginBottom:12}}>
+              <div className="chart-title">Player Confirmation</div>
+              <div style={{fontSize:16, fontWeight:700, color: confirmedCount === totalPlayerSlots ? 'var(--green-mid)' : 'var(--amber-mid)'}}>
+                {confirmedCount} of {totalPlayerSlots} players confirmed
+              </div>
+              <div className="commitment-bar-bg" style={{marginTop:8}}>
+                <div className="commitment-bar-fill" style={{width: totalPlayerSlots>0?`${(confirmedCount/totalPlayerSlots)*100}%`:'0%'}} />
+              </div>
+              <div style={{fontSize:12, color:'var(--text-secondary)', marginTop:4}}>
+                {pairsCount} pair slot{pairsCount>1?'s':''} - go to the Players tab to confirm your players
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* PLAYERS TAB */}
+        {foTab === 'players' && (
+          <div>
+            <div style={{fontWeight:700, fontSize:16, marginBottom:4}}>Commit Your Players</div>
+            <div style={{color:'var(--text-secondary)', fontSize:13, marginBottom:16}}>You have {pairsCount} pair slot{pairsCount>1?'s':''}. Each pair = 2 players.</div>
+            {Array.from({length: pairsCount}, (_, i) => i+1).map(pairNum => {
+              const slots = pairData[pairNum] || [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}];
+              return (
+                <div key={pairNum} className="pair-card">
+                  <div className="pair-card-title">Pair {pairNum}</div>
+                  {[0,1].map(si => {
+                    const sl = slots[si] || {name:'',contact:'',committed:false};
+                    return (
+                      <div key={si}>
+                        <div style={{fontSize:12, fontWeight:600, color:'var(--text-secondary)', marginBottom:4}}>Player {si+1}</div>
+                        <div className="player-row">
+                          <input type="text" placeholder="Player name" value={sl.name}
+                            onChange={e => setPairData(prev => {
+                              const newSlots = [...(prev[pairNum]||[{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}])];
+                              newSlots[si] = {...newSlots[si], name: e.target.value};
+                              return {...prev, [pairNum]: newSlots};
+                            })} />
+                          <input type="text" placeholder="Contact" value={sl.contact} style={{width:120, flexShrink:0}}
+                            onChange={e => setPairData(prev => {
+                              const newSlots = [...(prev[pairNum]||[{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}])];
+                              newSlots[si] = {...newSlots[si], contact: e.target.value};
+                              return {...prev, [pairNum]: newSlots};
+                            })} />
+                          <button className={`player-committed-btn ${sl.committed?'on':''}`}
+                            onClick={() => setPairData(prev => {
+                              const newSlots = [...(prev[pairNum]||[{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}])];
+                              newSlots[si] = {...newSlots[si], committed: !newSlots[si].committed};
+                              return {...prev, [pairNum]: newSlots};
+                            })}>
+                            {sl.committed ? 'Confirmed' : 'Confirm'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <button onClick={() => savePair(pairNum)} disabled={!!savingPairs[pairNum]}
+                    style={{width:'100%', height:36, background:'var(--blue-mid)', color:'#fff', border:'none', borderRadius:6, fontSize:13, fontWeight:600, cursor:'pointer', marginTop:8, opacity:savingPairs[pairNum]?0.7:1}}>
+                    {savingPairs[pairNum] ? 'Saving...' : 'Save Pair ' + pairNum}
+                  </button>
+                </div>
+              );
+            })}
+            {/* Progress */}
+            <div className="card" style={{marginTop:8}}>
+              <div style={{fontSize:13, color:'var(--text-secondary)'}}>Confirmed: <strong style={{color:'var(--green-mid)'}}>{confirmedCount}</strong> / {totalPlayerSlots} players</div>
+              <div className="commitment-bar-bg" style={{marginTop:8}}>
+                <div className="commitment-bar-fill" style={{width: totalPlayerSlots>0?`${(confirmedCount/totalPlayerSlots)*100}%`:'0%'}} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FIXTURES TAB */}
+        {foTab === 'fixtures' && (
+          <div>
+            <div style={{fontWeight:700, fontSize:16, marginBottom:16}}>Tournament Bracket</div>
+            <BracketRenderer fixtures={fixtures} myFranchiseName={franchiseProfile.partner_name} />
+          </div>
+        )}
+
+        {/* EARNINGS TAB */}
+        {foTab === 'earnings' && (
+          <div>
+            <div style={{fontWeight:700, fontSize:16, marginBottom:4}}>Financial Report</div>
+            <div style={{color:'var(--text-secondary)', fontSize:13, marginBottom:12}}>Your investment and prize scenarios</div>
+            <div className="card" style={{marginBottom:12}}>
+              <div className="chart-title">Investment vs Prize Scenarios</div>
+              <EarningsChart investedTotal={investedTotal} />
+            </div>
+            <div className="card" style={{marginBottom:12}}>
+              <div className="chart-title">Scenario Analysis</div>
+              <div className="table-wrap">
+                <table>
+                  <thead><tr><th>Scenario</th><th>Prize</th><th>Net Cost</th><th>Cost/Player/Day</th></tr></thead>
+                  <tbody>
+                    {[['1st Place',25000],['2nd Place',15000],['3rd Place',5000],['Eliminated',0]].map(([sc, prize]) => {
+                      const net = investedTotal - prize;
+                      const days = 2;
+                      const cpp = totalPlayerSlots > 0 ? net / (totalPlayerSlots * days) : 0;
+                      return (
+                        <tr key={sc}>
+                          <td>{sc}</td>
+                          <td style={{color:'var(--green-mid)', fontWeight:600}}>{formatINR(prize)}</td>
+                          <td style={{color: net <= 0 ? 'var(--green-mid)' : 'var(--text-primary)'}}>{formatINR(net)}</td>
+                          <td style={{color:'var(--text-secondary)'}}>{formatINR(cpp)}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            {/* Player award toggle */}
+            <div className="card" style={{marginBottom:12}}>
+              <div className="chart-title">Franchise Player Award</div>
+              <div className="toggle-row" style={{marginBottom:8}}>
+                <Toggle on={playerAwardEnabled} onChange={setPlayerAwardEnabled} />
+                <span className="toggle-label">I want to reward my players from my own budget</span>
+              </div>
+              {playerAwardEnabled && (
+                <div>
+                  <div className="field-row">
+                    <label className="field-label">Total Player Award Budget (Rs)</label>
+                    <input type="number" min="0" value={playerAwardBudget} onChange={e=>setPlayerAwardBudget(Number(e.target.value)||0)} />
+                  </div>
+                  {totalPlayerSlots > 0 && (
+                    <div style={{fontSize:13, color:'var(--text-secondary)', marginTop:4}}>
+                      {formatINR(playerAwardBudget)} / {totalPlayerSlots} players = <strong style={{color:'var(--blue-mid)'}}>{formatINR(playerAwardBudget/totalPlayerSlots)}</strong> per player
+                    </div>
+                  )}
+                  <div style={{fontSize:11, color:'var(--text-muted)', marginTop:4}}>This comes from your own pocket and is not part of the league prize pool.</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Tab bar */}
+      <div className="fo-tab-bar">
+        {[['home','🏠','Home'],['players','👥','Players'],['fixtures','🏆','Fixtures'],['earnings','💰','Earnings']].map(([id, icon, label]) => (
+          <button key={id} className={`fo-tab ${foTab===id?'active':''}`} onClick={()=>setFoTab(id)}>
+            <span className="fo-tab-icon">{icon}</span>
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- FIXTURE GENERATOR ----
+function generateFixtures(state) {
+  const allTeams = [
+    ...state.brandPartners.map(p => ({name: p.name, type: 'brand', pairs: p.pairsPerPartner})),
+    ...state.communityPartners.map(p => ({name: p.name, type: 'community', pairs: p.pairsPerPartner})),
+  ];
+  if (allTeams.length === 0) return null;
+  const numGroups = Math.max(1, Math.ceil(allTeams.length / 4));
+  const groups = Array.from({length: numGroups}, (_, i) => ({ name: `Group ${String.fromCharCode(65+i)}`, teams: [] }));
+  allTeams.forEach((team, i) => groups[i % numGroups].teams.push(team));
+  groups.forEach(g => {
+    g.matches = [];
+    for (let i = 0; i < g.teams.length; i++) {
+      for (let j = i+1; j < g.teams.length; j++) {
+        g.matches.push({ team1: g.teams[i].name, team2: g.teams[j].name, score1: null, score2: null, winner: null });
+      }
+    }
+  });
+  const advancers = groups.flatMap(g => g.teams.slice(0, 2).map(t => t.name));
+  const knockout = { rounds: [] };
+  let round = [];
+  for (let i = 0; i < advancers.length; i += 2) {
+    round.push({ team1: advancers[i], team2: advancers[i+1]||'TBD', score1: null, score2: null, winner: null });
+  }
+  while (round.length > 0) {
+    const name = round.length === 1 ? 'Final' : round.length === 2 ? 'Semi-Finals' : `Quarter-Finals`;
+    knockout.rounds.push({ name, matches: round });
+    if (round.length <= 1) break;
+    const nextRound = [];
+    for (let i = 0; i < round.length; i += 2) {
+      nextRound.push({ team1: 'Winner TBD', team2: 'Winner TBD', score1: null, score2: null, winner: null });
+    }
+    round = nextRound;
+    if (round.length <= 1) {
+      if (round.length === 1) knockout.rounds.push({ name: 'Final', matches: round });
+      break;
+    }
+  }
+  return { groups, knockout, generatedAt: new Date().toISOString() };
+}
+
+// ---- ORGANIZER LEAGUE TAB ----
+function OrganizerLeagueTab({ state }) {
+  const [pendingFOs, setPendingFOs] = useState([]);
+  const [loadingPending, setLoadingPending] = useState(true);
+  const [fixturePreview, setFixturePreview] = useState(null);
+  const [savingFixtures, setSavingFixtures] = useState(false);
+  const [savedMsg, setSavedMsg] = useState('');
+  const [savedFixtures, setSavedFixtures] = useState(null);
+  const [approvingId, setApprovingId] = useState(null);
+
+  useEffect(() => {
+    loadPending();
+    loadSavedFixtures();
+  }, []);
+
+  async function loadPending() {
+    setLoadingPending(true);
+    const { data } = await supabase.from('rrc_franchise_owners')
+      .select('*, rrc_registration_payments(*)').eq('registration_paid', false);
+    setPendingFOs(data || []);
+    setLoadingPending(false);
+  }
+
+  async function loadSavedFixtures() {
+    const { data } = await supabase.from('rrc_tournament_fixtures').select('*').eq('config_name','default').single();
+    if (data) setSavedFixtures(data.fixtures);
+  }
+
+  async function approveRegistration(fo) {
+    setApprovingId(fo.id);
+    await supabase.from('rrc_franchise_owners').update({ registration_paid: true }).eq('id', fo.id);
+    if (fo.rrc_registration_payments && fo.rrc_registration_payments[0]) {
+      await supabase.from('rrc_registration_payments').update({ approved_at: new Date().toISOString() }).eq('id', fo.rrc_registration_payments[0].id);
+    }
+    setApprovingId(null);
+    loadPending();
+  }
+
+  async function saveFixtures() {
+    if (!fixturePreview) return;
+    setSavingFixtures(true);
+    await supabase.from('rrc_tournament_fixtures').upsert({ config_name: 'default', fixtures: fixturePreview, results: {} }, { onConflict: 'config_name' });
+    setSavedFixtures(fixturePreview);
+    setSavingFixtures(false);
+    setSavedMsg('Fixtures saved and published!');
+    setTimeout(() => setSavedMsg(''), 3000);
+  }
+
+  return (
+    <div style={{padding:'0 0 20px 0'}}>
+      {/* Pending Registrations */}
+      <div className="league-section">
+        <div className="league-section-title">Pending Registrations</div>
+        {loadingPending ? (
+          <div style={{fontSize:13, color:'var(--text-secondary)'}}>Loading...</div>
+        ) : pendingFOs.length === 0 ? (
+          <div style={{fontSize:13, color:'var(--text-secondary)', background:'var(--green-bg)', padding:'10px 14px', borderRadius:8}}>No pending registrations.</div>
+        ) : pendingFOs.map(fo => (
+          <div key={fo.id} className="reg-pending-card">
+            <div style={{display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:6}}>
+              <div>
+                <div style={{fontWeight:700, fontSize:14}}>{fo.franchise_label || fo.partner_name}</div>
+                <div style={{fontSize:12, color:'var(--text-secondary)'}}>{fo.partner_type} partner - {fo.partner_name}</div>
+              </div>
+              <button onClick={() => approveRegistration(fo)} disabled={approvingId===fo.id}
+                style={{height:32, padding:'0 12px', background:'var(--green-mid)', color:'#fff', border:'none', borderRadius:6, fontSize:12, fontWeight:700, cursor:'pointer', opacity:approvingId===fo.id?0.7:1}}>
+                {approvingId===fo.id ? '...' : 'Approve'}
+              </button>
+            </div>
+            {fo.rrc_registration_payments && fo.rrc_registration_payments[0] && (
+              <div style={{fontSize:12, color:'var(--text-secondary)', background:'var(--bg)', borderRadius:4, padding:'4px 8px'}}>
+                Payment ref: {fo.rrc_registration_payments[0].payment_ref || '(none provided)'}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Fixtures Generator */}
+      <div className="league-section">
+        <div className="league-section-title">Tournament Fixtures Generator</div>
+        <div style={{fontSize:13, color:'var(--text-secondary)', marginBottom:10}}>
+          {state.brandPartners.length + state.communityPartners.length} franchises configured. Will create {Math.max(1, Math.ceil((state.brandPartners.length + state.communityPartners.length)/4))} groups.
+        </div>
+        <button onClick={() => setFixturePreview(generateFixtures(state))}
+          style={{height:40, padding:'0 16px', background:'var(--blue-mid)', color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer', marginBottom:10}}>
+          Generate Fixtures
+        </button>
+        {fixturePreview && (
+          <div>
+            <div style={{marginBottom:10}}>
+              <BracketRenderer fixtures={fixturePreview} myFranchiseName={null} />
+            </div>
+            <button onClick={saveFixtures} disabled={savingFixtures}
+              style={{height:40, padding:'0 16px', background:'var(--green-mid)', color:'#fff', border:'none', borderRadius:8, fontSize:13, fontWeight:700, cursor:'pointer'}}>
+              {savingFixtures ? 'Saving...' : 'Save and Publish Fixtures'}
+            </button>
+            {savedMsg && <span style={{marginLeft:10, fontSize:13, color:'var(--green-mid)', fontWeight:600}}>{savedMsg}</span>}
+          </div>
+        )}
+        {savedFixtures && !fixturePreview && (
+          <div>
+            <div style={{fontSize:13, color:'var(--green)', background:'var(--green-bg)', padding:'8px 12px', borderRadius:6, marginBottom:10}}>
+              Fixtures are published. Click Generate to create a new set.
+            </div>
+            <BracketRenderer fixtures={savedFixtures} myFranchiseName={null} />
+          </div>
+        )}
+      </div>
+
+      {/* Registration Revenue */}
+      <div className="league-section">
+        <div className="league-section-title">Registration Revenue</div>
+        <div style={{fontSize:13, color:'var(--text-secondary)'}}>
+          {state.brandPartners.length + state.communityPartners.length} franchises x Rs 5,000 = <strong style={{color:'var(--green-mid)'}}>{formatINR((state.brandPartners.length + state.communityPartners.length) * 5000)}</strong>
+        </div>
+        <div style={{fontSize:12, color:'var(--text-muted)', marginTop:4}}>Registration fees are included in total revenue calculations.</div>
+      </div>
+    </div>
+  );
+}
+
 // ---- MAIN APP ----
 function App() {
   const [state, setState] = useState(initialState);
   const [cloudStatus, setCloudStatus] = useState('');
   const [mobileTab, setMobileTab] = useState('setup');
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // Auth state
+  const [authUser, setAuthUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [franchiseProfile, setFranchiseProfile] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authView, setAuthView] = useState('login');
 
   // Schedule predictor state
   const [openaiKey, setOpenaiKey] = useState(''); // kept for local fallback only
@@ -1087,6 +1786,34 @@ function App() {
   const [scheduleResult, setScheduleResult] = useState(null);
   const [scheduleError, setScheduleError] = useState('');
   const [showAllSlots, setShowAllSlots] = useState(false);
+
+  // Auth: check session on mount
+  useEffect(() => {
+    async function checkSession() {
+      if (!supabase) { setAuthLoading(false); return; }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) await resolveUserRole(session.user);
+      setAuthLoading(false);
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        if (session?.user) {
+          await resolveUserRole(session.user);
+        } else {
+          setAuthUser(null); setUserRole(null); setFranchiseProfile(null);
+        }
+      });
+      return () => subscription.unsubscribe();
+    }
+    checkSession();
+  }, []);
+
+  async function resolveUserRole(user) {
+    setAuthUser(user);
+    const { data: org } = await supabase.from('rrc_organizers').select('*').eq('user_id', user.id).single();
+    if (org) { setUserRole('organizer'); return; }
+    const { data: fo } = await supabase.from('rrc_franchise_owners').select('*').eq('user_id', user.id).single();
+    if (fo) { setFranchiseProfile(fo); setUserRole('franchise_owner'); return; }
+    setUserRole('new_user');
+  }
 
   // Load from Supabase on mount (fall back to localStorage)
   useEffect(() => {
@@ -1395,6 +2122,22 @@ Return a JSON object with this exact structure:
 
   const earningsClass = metrics.rrcEarnings >= state.targetEarnings ? 'green' : metrics.rrcEarnings >= 0 ? 'amber' : 'red';
 
+  // Auth render gating
+  if (authLoading) return (
+    <div style={{minHeight:'100vh', display:'flex', alignItems:'center', justifyContent:'center', background:'var(--bg)'}}>
+      <div style={{fontSize:14, color:'var(--text-secondary)'}}>Loading...</div>
+    </div>
+  );
+  if (!authUser) return <AuthScreen authView={authView} setAuthView={setAuthView} />;
+  if (userRole === 'new_user') return (
+    <FranchiseRegistrationScreen user={authUser} state={state}
+      onComplete={(fo) => { setFranchiseProfile(fo); setUserRole('franchise_owner'); }} />
+  );
+  if (userRole === 'franchise_owner') return (
+    <FranchiseOwnerApp user={authUser} franchiseProfile={franchiseProfile}
+      state={state} onSignOut={() => supabase.auth.signOut()} />
+  );
+
   return (
     <div>
       {/* HEADER */}
@@ -1410,6 +2153,12 @@ Return a JSON object with this exact structure:
         <span className="header-tag" style={{background: metrics.rrcEarnings >= state.targetEarnings ? 'var(--green-bg)' : 'var(--amber-bg)', color: metrics.rrcEarnings >= state.targetEarnings ? 'var(--green)' : 'var(--amber)', borderColor: metrics.rrcEarnings >= state.targetEarnings ? '#86efac' : '#fcd34d'}}>
           RRC: {formatINR(metrics.rrcEarnings)}
         </span>
+        {authUser && (
+          <div style={{display:'flex', alignItems:'center', gap:8}}>
+            <span style={{fontSize:12, color:'var(--text-secondary)', maxWidth:80, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>Organizer</span>
+            <button onClick={()=>supabase.auth.signOut()} style={{height:28, padding:'0 10px', border:'1px solid var(--border)', borderRadius:6, background:'transparent', fontSize:12, cursor:'pointer', color:'var(--text-secondary)'}}>Sign Out</button>
+          </div>
+        )}
       </div>
 
       {/* MAIN LAYOUT */}
@@ -1715,64 +2464,29 @@ Return a JSON object with this exact structure:
             </Section>
           </div>
 
-          {/* Section 6: Prize Pool */}
+          {/* Section 6: Prize Money (fixed) */}
           <div className="card" style={{marginBottom:12}}>
-            <Section title="Prize Pool">
-              <div className="toggle-row" style={{marginBottom:10}}>
-                <Toggle on={state.prizePool.enabled} onChange={v => setState(prev => ({...prev, prizePool: {...prev.prizePool, enabled: v}}))} />
-                <span className="toggle-label">Enable Prize Pool</span>
+            <div style={{fontWeight:700, fontSize:14, marginBottom:8}}>Prize Money (Fixed)</div>
+            <div style={{background:'var(--amber-bg)', borderRadius:8, padding:'10px 14px', fontSize:13, color:'var(--amber)'}}>
+              Fixed prizes are included as a cost line item.
+            </div>
+            <div style={{marginTop:10}}>
+              {[['🥇 1st Place', 25000],['🥈 2nd Place', 15000],['🥉 3rd Place', 5000]].map(([label, amt]) => (
+                <div key={label} className="summary-row">
+                  <span className="label">{label}</span>
+                  <span className="value" style={{color:'var(--amber-mid)'}}>{formatINR(amt)}</span>
+                </div>
+              ))}
+              <div className="summary-row" style={{borderTop:'2px solid var(--border-strong)', paddingTop:8, marginTop:4}}>
+                <span className="label" style={{fontWeight:700}}>Total Prize Money</span>
+                <span className="value" style={{color:'var(--amber-mid)', fontWeight:700}}>Rs 45,000</span>
               </div>
-              {state.prizePool.enabled && (
-                <>
-                  <div className="field-row">
-                    <label className="field-label">Prize Pool %: {state.prizePool.pct}% of gross surplus</label>
-                    <input type="range" min="0" max="60" step="5" value={state.prizePool.pct}
-                      onChange={e => setState(prev => ({...prev, prizePool: {...prev.prizePool, pct: Number(e.target.value)}}))} />
-                    <div style={{display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--text-muted)'}}>
-                      <span>0%</span><span>30%</span><span>60%</span>
-                    </div>
-                    <div className="field-hint">% of gross surplus set aside for player and partner prizes</div>
-                  </div>
-                  <div className="summary-row">
-                    <span className="label">Prize Pool Amount</span>
-                    <span className="value" style={{color:'var(--purple-mid)'}}>{formatINR(metrics.prizePoolAmount)}</span>
-                  </div>
-                  <div style={{marginTop:12}}>
-                    <div style={{fontSize:12, fontWeight:700, color:'var(--text-secondary)', marginBottom:6}}>PRIZE DISTRIBUTION</div>
-                    <div style={{fontSize:12, color:'var(--text-muted)', marginBottom:6}}>Player Pool (50%): {formatINR(metrics.prizePoolAmount * 0.5)}</div>
-                    {[
-                      ['1st Place (35%)', dist.first1],
-                      ['2nd Place (25%)', dist.second1],
-                      ['3rd Place (15%)', dist.third1],
-                      ['MVP Award (12.5%)', dist.mvp],
-                      ['Newcomer Award (12.5%)', dist.newcomer],
-                    ].map(([label, val]) => (
-                      <div key={label} className="prize-dist-row">
-                        <span style={{color:'var(--text-secondary)'}}>{label}</span>
-                        <span style={{fontWeight:600}}>{formatINR(val)}</span>
-                      </div>
-                    ))}
-                    <div style={{fontSize:12, color:'var(--text-muted)', marginTop:8, marginBottom:6}}>Partner Pool (30%): {formatINR(metrics.prizePoolAmount * 0.3)}</div>
-                    {[
-                      ['1st Place Partner (40%)', dist.firstPartner],
-                      ['2nd Place Partner (35%)', dist.secondPartner],
-                      ['3rd Place Partner (25%)', dist.thirdPartner],
-                    ].map(([label, val]) => (
-                      <div key={label} className="prize-dist-row">
-                        <span style={{color:'var(--text-secondary)'}}>{label}</span>
-                        <span style={{fontWeight:600}}>{formatINR(val)}</span>
-                      </div>
-                    ))}
-                    <div style={{fontSize:12, color:'var(--text-muted)', marginTop:8, marginBottom:6}}>Float / Reserve (20%): {formatINR(dist.floatShare)}</div>
-                  </div>
-                </>
-              )}
-            </Section>
+            </div>
           </div>
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className={`right-col ${(mobileTab==='results'||mobileTab==='franchise'||mobileTab==='schedule')?'tab-active':''}`}>
+        <div className={`right-col ${(mobileTab==='results'||mobileTab==='franchise'||mobileTab==='schedule'||mobileTab==='league')?'tab-active':''}`}>
 
           {/* RESULTS SECTION */}
           {(mobileTab === 'results' || !isMobile) && <div>
@@ -1830,12 +2544,14 @@ Return a JSON object with this exact structure:
               <div className={`metric-value ${metrics.grossSurplus >= 0 ? 'green' : 'red'}`}>{formatINR(metrics.grossSurplus)}</div>
             </div>
             <div className="metric-card">
-              <div className="metric-label">Prize Pool</div>
-              <div className="metric-value purple">{formatINR(metrics.prizePoolAmount)}</div>
+              <div className="metric-label">Prize Money</div>
+              <div className="metric-value amber">Rs 45,000</div>
+              <div style={{fontSize:11, color:'var(--text-muted)'}}>Fixed (1st+2nd+3rd)</div>
             </div>
             <div className="metric-card">
-              <div className="metric-label">Net After Prizes</div>
-              <div className={`metric-value ${metrics.netAfterPrizes >= 0 ? 'green' : 'red'}`}>{formatINR(metrics.netAfterPrizes)}</div>
+              <div className="metric-label">Reg. Fee Revenue</div>
+              <div className="metric-value green">{formatINR(metrics.registrationFeeRevenue)}</div>
+              <div style={{fontSize:11, color:'var(--text-muted)'}}>{state.brandPartners.length + state.communityPartners.length} franchises</div>
             </div>
             <div className="metric-card">
               <div className="metric-label">Total Partners</div>
@@ -1859,6 +2575,7 @@ Return a JSON object with this exact structure:
                     [`${state.tierLabels.brand}`, metrics.brandPartnerRevenue],
                     [`${state.tierLabels.community}`, metrics.communityPartnerRevenue],
                     ['Player Fees', metrics.playerFeeRevenue],
+                    ['Registration Fees', metrics.registrationFeeRevenue],
                     ['Paid Sponsor', metrics.paidSponsorRevenue],
                     ['Barter Value', metrics.barterValue],
                     ['Vendor Stalls', metrics.vendorRevenue],
@@ -2024,7 +2741,7 @@ Return a JSON object with this exact structure:
               ['Total Revenue', formatINR(metrics.totalRevenue), false],
               ['Total Costs', `(${formatINR(metrics.totalCosts)})`, false],
               ['Gross Surplus', formatINR(metrics.grossSurplus), metrics.grossSurplus < 0],
-              [`Prize Pool (${state.prizePool.pct}%)`, `(${formatINR(metrics.prizePoolAmount)})`, false],
+              ['Prize Money (in costs)', '(Rs 45,000 fixed)', false],
               ['Net After Prizes', formatINR(metrics.netAfterPrizes), metrics.netAfterPrizes < 0],
               ['Mgmt Fee (in costs)', formatINR(metrics.mgmtFee), false],
               ['RRC TOTAL EARNINGS', formatINR(metrics.rrcEarnings), metrics.rrcEarnings < 0],
@@ -2192,6 +2909,16 @@ Return a JSON object with this exact structure:
               </div>
             );
           })()}
+
+          {/* LEAGUE SECTION */}
+          {(mobileTab === 'league' || !isMobile) && (
+            <div>
+              <div className="right-section-title" style={{marginTop: isMobile ? 0 : 16}}>
+                ⚡ League Management
+              </div>
+              <OrganizerLeagueTab state={state} />
+            </div>
+          )}
 
           {/* SCHEDULE SECTION */}
           {(mobileTab === 'schedule' || !isMobile) && (
@@ -2402,6 +3129,10 @@ Return a JSON object with this exact structure:
         <button className={`mobile-tab ${mobileTab==='schedule'?'active':''}`} onClick={()=>setMobileTab('schedule')}>
           <span className="mobile-tab-icon">🗓️</span>
           <span>Schedule</span>
+        </button>
+        <button className={`mobile-tab ${mobileTab==='league'?'active':''}`} onClick={()=>setMobileTab('league')}>
+          <span className="mobile-tab-icon">⚡</span>
+          <span>League</span>
         </button>
       </div>
 
