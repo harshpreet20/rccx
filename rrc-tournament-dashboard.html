@@ -1070,7 +1070,7 @@ function App() {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
 
   // Schedule predictor state
-  const [openaiKey, setOpenaiKey] = useState(() => localStorage.getItem('rrc_openai_key') || '');
+  const [openaiKey, setOpenaiKey] = useState(''); // kept for local fallback only
   const [scheduleInputs, setScheduleInputs] = useState({
     totalPlayers: 0,
     courts: 4,
@@ -1132,10 +1132,6 @@ function App() {
     return () => window.removeEventListener('resize', handler);
   }, []);
 
-  // persist openaiKey
-  useEffect(() => {
-    localStorage.setItem('rrc_openai_key', openaiKey);
-  }, [openaiKey]);
 
   const metrics = computeMetrics(state);
   const dist = computePrizeDistribution(metrics.prizePoolAmount);
@@ -1307,7 +1303,6 @@ function App() {
   }));
 
   async function generateSchedule() {
-    if (!openaiKey) { alert('Please enter your OpenAI API key'); return; }
     setScheduleLoading(true);
     setScheduleError('');
     setScheduleResult(null);
@@ -1362,9 +1357,9 @@ Return a JSON object with this exact structure:
 }`;
 
     try {
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      const res = await fetch('/api/schedule', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [{ role: 'user', content: prompt }],
@@ -2206,10 +2201,8 @@ Return a JSON object with this exact structure:
               </div>
 
               <div className="card">
-                <div className="field-row">
-                  <label className="field-label">OpenAI API Key</label>
-                  <input type="password" value={openaiKey} onChange={e => setOpenaiKey(e.target.value)} placeholder="sk-..." />
-                  <span className="field-hint">Stored in browser only. Used to generate the match schedule.</span>
+                <div style={{background:'var(--green-bg)', border:'1px solid #86efac', borderRadius:8, padding:'8px 12px', marginBottom:12, fontSize:12, color:'var(--green)', fontWeight:500}}>
+                  API key configured via Vercel environment variable. Schedule generation is ready.
                 </div>
 
                 <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
