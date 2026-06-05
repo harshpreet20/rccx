@@ -347,6 +347,7 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .chat-input-row input { flex: 1; height: 40px; border: 1px solid var(--border); border-radius: 20px; padding: 0 14px; font-size: 14px; }
 .chat-send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--blue-mid); border: none; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.chat-timeout-bar { height: 3px; background: var(--amber-mid); transition: width 1s linear; }
 
 @media (max-width: 768px) {
   .schedule-stats-grid { grid-template-columns: repeat(2, 1fr); }
@@ -418,8 +419,28 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
   .stepper-btn { width: 44px; height: 44px; }
   .stepper-val { height: 44px; }
   .toggle { width: 48px; height: 26px; }
-  .section-header { min-height: 48px; }
+  .section-header { min-height: 48px; padding: 14px 0; }
   .field-label { font-size: 13px; }
+  /* Ensure nothing is clipped under tab bar */
+  .left-col, .right-col { padding-bottom: 80px !important; }
+  /* Inputs: 16px prevents iOS auto-zoom */
+  input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea {
+    font-size: 16px !important;
+  }
+  /* Franchise card: tighter on small screens */
+  .franchise-card { padding: 12px; }
+  /* Metric cards: consistent height */
+  .metric-card { min-height: 72px; }
+  /* earnings big number: smaller on mobile */
+  .earnings-big { font-size: 32px; }
+  /* Remove horizontal overflow on charts */
+  .chart-wrap { overflow: hidden; }
+  /* Full-width buttons on mobile */
+  .generate-btn { font-size: 14px; }
+  /* Tab bar: safe area for notched phones */
+  .mobile-tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); height: calc(56px + env(safe-area-inset-bottom, 0px)); }
+  /* Franchise owner tab bar same */
+  .fo-tab-bar { padding-bottom: env(safe-area-inset-bottom, 0px); height: calc(56px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>
 </head>
@@ -1838,6 +1859,20 @@ function App() {
   const [scheduleResult, setScheduleResult] = useState(null);
   const [scheduleError, setScheduleError] = useState('');
   const [showAllSlots, setShowAllSlots] = useState(false);
+
+  // Doc generation
+  const [docGenLoading, setDocGenLoading] = useState('');
+
+  // Chatbot state
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMessages, setChatMessages] = useState([
+    { role: 'assistant', content: 'Hi! Ask me anything about the RRC Doubles Cup.', model: 'claude' }
+  ]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatLoading, setChatLoading] = useState(false);
+  const [chatTimeout, setChatTimeout] = useState(0);
+  const chatEndRef = useRef(null);
+  const clientId = useRef(Math.random().toString(36).slice(2));
 
   // Auth: check session on mount
   useEffect(() => {
