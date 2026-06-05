@@ -15,18 +15,19 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
-  --bg: #f7f8fa;
+  --bg: #f0f4ff;
   --surface: #ffffff;
-  --border: #e2e8f0;
-  --border-strong: #cbd5e1;
-  --text-primary: #1e293b;
-  --text-secondary: #64748b;
+  --border: #dde3f0;
+  --border-strong: #c4cfe8;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
   --text-muted: #94a3b8;
-  --green: #166534; --green-bg: #dcfce7; --green-mid: #16a34a;
-  --red: #991b1b; --red-bg: #fee2e2; --red-mid: #dc2626;
-  --amber: #92400e; --amber-bg: #fef3c7; --amber-mid: #d97706;
-  --blue: #1e40af; --blue-bg: #eff6ff; --blue-mid: #2563eb;
-  --purple: #5b21b6; --purple-bg: #f5f3ff; --purple-mid: #7c3aed;
+  --green: #14532d; --green-bg: #dcfce7; --green-mid: #16a34a;
+  --red: #7f1d1d; --red-bg: #fee2e2; --red-mid: #dc2626;
+  --amber: #78350f; --amber-bg: #fef3c7; --amber-mid: #d97706;
+  --blue: #1e3a8a; --blue-bg: #e8f0ff; --blue-mid: #2563eb;
+  --purple: #4c1d95; --purple-bg: #f3f0ff; --purple-mid: #7c3aed;
+  --brand1: #6366f1; --brand2: #8b5cf6;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.5; background: var(--bg); color: var(--text-primary); }
@@ -39,15 +40,18 @@ input[type="range"] { width: 100%; accent-color: var(--blue-mid); }
 button { cursor: pointer; }
 .sticky-header {
   position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 100;
-  background: var(--surface); border-bottom: 1px solid var(--border);
+  background: linear-gradient(90deg, #1e3a8a 0%, #6366f1 60%, #8b5cf6 100%);
+  border-bottom: none;
   display: flex; align-items: center; padding: 0 14px; gap: 10px;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.25);
 }
-.header-logo { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+.header-logo { font-size: 14px; font-weight: 800; color: #fff; white-space: nowrap; letter-spacing: 0.03em; }
 .header-subtitle { display: none; }
 .header-spacer { flex: 1; }
 .header-tag {
-  background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe;
+  background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.3);
   border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 600; white-space: nowrap;
+  backdrop-filter: blur(4px);
 }
 .main-layout {
   margin-top: 44px; height: calc(100vh - 44px); display: flex;
@@ -64,7 +68,8 @@ button { cursor: pointer; }
 }
 .card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 16px; margin-bottom: 12px;
+  border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(30,58,138,0.05);
 }
 .section-header {
   display: flex; align-items: center; gap: 8px; padding: 10px 0 8px 0;
@@ -140,8 +145,18 @@ button { cursor: pointer; }
 .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 .metric-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 14px;
+  border-radius: 12px; padding: 14px;
+  box-shadow: 0 1px 4px rgba(30,58,138,0.06);
 }
+.metric-card.blue-card { background: linear-gradient(135deg, #2563eb 0%, #6366f1 100%); border: none; }
+.metric-card.green-card { background: linear-gradient(135deg, #16a34a 0%, #0d9488 100%); border: none; }
+.metric-card.amber-card { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border: none; }
+.metric-card.blue-card .metric-label,
+.metric-card.green-card .metric-label,
+.metric-card.amber-card .metric-label { color: rgba(255,255,255,0.8); }
+.metric-card.blue-card .metric-value,
+.metric-card.green-card .metric-value,
+.metric-card.amber-card .metric-value { color: #fff; }
 .metric-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
 .metric-value { font-size: 22px; font-weight: 700; color: var(--text-primary); }
 .metric-value.green { color: var(--green-mid); }
@@ -150,9 +165,15 @@ button { cursor: pointer; }
 .metric-value.purple { color: var(--purple-mid); }
 .metric-value.amber { color: var(--amber-mid); }
 .earnings-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 20px; margin-bottom: 12px;
+  background: linear-gradient(135deg, #1e3a8a 0%, #6366f1 100%);
+  border: none; border-radius: 14px; padding: 20px; margin-bottom: 12px;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+  color: #fff;
 }
+.earnings-card .metric-label,
+.earnings-card .variance-row .lbl { color: rgba(255,255,255,0.75); }
+.earnings-card .variance-row .val,
+.earnings-card .earnings-big { color: #fff; }
 .earnings-big { font-size: 42px; font-weight: 800; margin-bottom: 4px; }
 .earnings-big.green { color: var(--green-mid); }
 .earnings-big.red { color: var(--red-mid); }
@@ -220,14 +241,17 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
   flex: 1; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 2px; border: none; background: transparent;
   font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer;
+  transition: color 0.15s;
 }
-.mobile-tab.active { color: var(--blue-mid); border-top: 2px solid var(--blue-mid); }
+.mobile-tab.active { color: var(--brand1); border-top: 2px solid var(--brand1); }
 .mobile-tab-icon { font-size: 18px; }
 
 /* Franchise cards */
 .franchise-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 10px; padding: 16px; margin-bottom: 12px;
+  border-left: 4px solid var(--brand1);
+  border-radius: 12px; padding: 16px; margin-bottom: 12px;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.08);
 }
 .franchise-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .franchise-partner-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
@@ -263,8 +287,8 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .fo-header { position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 10px; }
 .fo-body { margin-top: 44px; padding: 16px; padding-bottom: 80px; max-width: 600px; margin-left: auto; margin-right: auto; }
 .fo-tab-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: var(--surface); border-top: 1px solid var(--border); z-index: 100; }
-.fo-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: none; background: transparent; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
-.fo-tab.active { color: var(--blue-mid); border-top: 2px solid var(--blue-mid); }
+.fo-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: none; background: transparent; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: color 0.15s; }
+.fo-tab.active { color: var(--brand1); border-top: 2px solid var(--brand1); }
 .fo-tab-icon { font-size: 18px; }
 .pair-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
 .pair-card-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
@@ -294,9 +318,12 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .recommendation-list li { padding: 6px 0; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-start; }
 .recommendation-list li::before { content: ""; color: var(--green-mid); flex-shrink: 0; margin-top: 2px; }
 .generate-btn {
-  width: 100%; height: 48px; background: var(--blue-mid); color: #fff;
+  width: 100%; height: 48px;
+  background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); color: #fff;
   border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin: 12px 0;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.3); transition: opacity 0.15s;
 }
+.generate-btn:hover { opacity: 0.9; }
 .generate-btn:hover { background: var(--blue); }
 .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 .auth-screen { padding-bottom: 80px; }
@@ -2377,8 +2404,8 @@ Return a JSON object with this exact structure:
         </span>
         {authUser && (
           <div style={{display:'flex', alignItems:'center', gap:8}}>
-            <span style={{fontSize:12, color:'var(--text-secondary)', maxWidth:80, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>Organizer</span>
-            <button onClick={()=>supabase.auth.signOut()} style={{height:28, padding:'0 10px', border:'1px solid var(--border)', borderRadius:6, background:'transparent', fontSize:12, cursor:'pointer', color:'var(--text-secondary)'}}>Sign Out</button>
+            <span style={{fontSize:12, color:'rgba(255,255,255,0.8)', maxWidth:80, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>Organizer</span>
+            <button onClick={()=>supabase.auth.signOut()} style={{height:28, padding:'0 10px', border:'1px solid rgba(255,255,255,0.35)', borderRadius:6, background:'rgba(255,255,255,0.12)', fontSize:12, cursor:'pointer', color:'#fff'}}>Sign Out</button>
           </div>
         )}
       </div>
@@ -2753,31 +2780,31 @@ Return a JSON object with this exact structure:
 
           {/* 6 Metric Cards */}
           <div className="metric-grid">
-            <div className="metric-card">
+            <div className="metric-card blue-card">
               <div className="metric-label">Total Revenue</div>
-              <div className="metric-value blue">{formatINR(metrics.totalRevenue)}</div>
+              <div className="metric-value">{formatINR(metrics.totalRevenue)}</div>
             </div>
-            <div className="metric-card">
+            <div className="metric-card" style={{borderLeft:'4px solid var(--red-mid)'}}>
               <div className="metric-label">Total Costs</div>
               <div className="metric-value red">{formatINR(metrics.totalCosts)}</div>
             </div>
-            <div className="metric-card">
+            <div className={`metric-card ${metrics.grossSurplus >= 0 ? 'green-card' : ''}`} style={metrics.grossSurplus < 0 ? {borderLeft:'4px solid var(--red-mid)'} : {}}>
               <div className="metric-label">Gross Surplus</div>
-              <div className={`metric-value ${metrics.grossSurplus >= 0 ? 'green' : 'red'}`}>{formatINR(metrics.grossSurplus)}</div>
+              <div className="metric-value">{formatINR(metrics.grossSurplus)}</div>
             </div>
-            <div className="metric-card">
+            <div className="metric-card amber-card">
               <div className="metric-label">Prize Money</div>
-              <div className="metric-value amber">Rs 45,000</div>
-              <div style={{fontSize:11, color:'var(--text-muted)'}}>Fixed (1st+2nd+3rd)</div>
+              <div className="metric-value">Rs 45,000</div>
+              <div style={{fontSize:11, color:'rgba(255,255,255,0.7)'}}>Fixed (1st+2nd+3rd)</div>
             </div>
-            <div className="metric-card">
+            <div className="metric-card" style={{borderLeft:'4px solid var(--green-mid)'}}>
               <div className="metric-label">Reg. Fee Revenue</div>
               <div className="metric-value green">{formatINR(metrics.registrationFeeRevenue)}</div>
               <div style={{fontSize:11, color:'var(--text-muted)'}}>{state.brandPartners.length + state.communityPartners.length} franchises</div>
             </div>
-            <div className="metric-card">
+            <div className="metric-card" style={{borderLeft:'4px solid var(--brand1)'}}>
               <div className="metric-label">Total Partners</div>
-              <div className="metric-value amber">{state.brandPartners.length + state.communityPartners.length}</div>
+              <div className="metric-value" style={{color:'var(--brand1)'}}>{state.brandPartners.length + state.communityPartners.length}</div>
               <div style={{fontSize:11, color:'var(--text-muted)'}}>{state.brandPartners.length} brand + {state.communityPartners.length} community</div>
             </div>
           </div>
