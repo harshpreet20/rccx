@@ -220,6 +220,60 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 }
 .mobile-tab.active { color: var(--blue-mid); border-top: 2px solid var(--blue-mid); }
 .mobile-tab-icon { font-size: 18px; }
+
+/* Franchise cards */
+.franchise-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 10px; padding: 16px; margin-bottom: 12px;
+}
+.franchise-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.franchise-partner-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.franchise-revenue { font-size: 20px; font-weight: 800; color: var(--blue-mid); }
+.franchise-tier-badge {
+  display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;
+  margin-left: 8px;
+}
+.franchise-tier-badge.brand { background: var(--blue-bg); color: var(--blue); }
+.franchise-tier-badge.community { background: var(--green-bg); color: var(--green); }
+.commitment-bar-bg { height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; margin: 6px 0; }
+.commitment-bar-fill { height: 100%; border-radius: 4px; background: var(--green-mid); transition: width 0.3s; }
+.franchise-mini-table { width: 100%; border-collapse: collapse; font-size: 12px; margin: 10px 0; }
+.franchise-mini-table th { background: var(--bg); padding: 5px 8px; text-align: left; font-size: 11px; color: var(--text-secondary); font-weight: 600; }
+.franchise-mini-table td { padding: 5px 8px; border-top: 1px solid var(--border); }
+.cost-per-player-big { font-size: 28px; font-weight: 800; color: var(--text-primary); }
+.value-badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700; margin-left: 8px; }
+.value-badge.value { background: var(--green-bg); color: var(--green); }
+.value-badge.premium { background: var(--amber-bg); color: var(--amber); }
+
+/* Schedule predictor */
+.schedule-section { }
+.day-timeline { display: flex; height: 64px; border-radius: 8px; overflow: hidden; margin: 12px 0; }
+.timeline-block { display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 4px 2px; overflow: hidden; min-width: 0; }
+.timeline-phase { font-size: 10px; font-weight: 700; color: #fff; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.timeline-time { font-size: 9px; color: rgba(255,255,255,0.8); white-space: nowrap; }
+.schedule-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+.schedule-stat { background: var(--bg); border-radius: 8px; padding: 10px; text-align: center; }
+.schedule-stat-val { font-size: 20px; font-weight: 800; color: var(--blue-mid); }
+.schedule-stat-lbl { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+.schedule-court-table { font-size: 12px; }
+.schedule-court-table th, .schedule-court-table td { padding: 6px 8px; }
+.schedule-court-table td { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.recommendation-list { list-style: none; margin: 8px 0; }
+.recommendation-list li { padding: 6px 0; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-start; }
+.recommendation-list li::before { content: ""; color: var(--green-mid); flex-shrink: 0; margin-top: 2px; }
+.generate-btn {
+  width: 100%; height: 48px; background: var(--blue-mid); color: #fff;
+  border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin: 12px 0;
+}
+.generate-btn:hover { background: var(--blue); }
+.generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+@media (max-width: 768px) {
+  .schedule-stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .schedule-court-table th:nth-child(4),
+  .schedule-court-table td:nth-child(4),
+  .schedule-court-table th:nth-child(5),
+  .schedule-court-table td:nth-child(5) { display: none; }
+}
 .mobile-results-strip {
   display: none;
   background: var(--surface); border: 1px solid var(--border);
@@ -1013,6 +1067,26 @@ function App() {
   const [state, setState] = useState(initialState);
   const [cloudStatus, setCloudStatus] = useState('');
   const [mobileTab, setMobileTab] = useState('setup');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+  // Schedule predictor state
+  const [openaiKey, setOpenaiKey] = useState(() => localStorage.getItem('rrc_openai_key') || '');
+  const [scheduleInputs, setScheduleInputs] = useState({
+    totalPlayers: 0,
+    courts: 4,
+    startTime: '08:00',
+    endTime: '17:00',
+    matchDuration: 30,
+    recoveryEnabled: true,
+    recoveryDuration: 60,
+    recoveryTime: '17:00',
+    partyEnabled: true,
+    partyTime: '18:00',
+  });
+  const [scheduleLoading, setScheduleLoading] = useState(false);
+  const [scheduleResult, setScheduleResult] = useState(null);
+  const [scheduleError, setScheduleError] = useState('');
+  const [showAllSlots, setShowAllSlots] = useState(false);
 
   // Load from Supabase on mount (fall back to localStorage)
   useEffect(() => {
@@ -1044,8 +1118,25 @@ function App() {
     loadOnMount();
   }, []);
 
+  // isMobile resize
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
+
+  // persist openaiKey
+  useEffect(() => {
+    localStorage.setItem('rrc_openai_key', openaiKey);
+  }, [openaiKey]);
+
   const metrics = computeMetrics(state);
   const dist = computePrizeDistribution(metrics.prizePoolAmount);
+
+  // sync schedule totalPlayers
+  useEffect(() => {
+    setScheduleInputs(prev => ({...prev, totalPlayers: metrics.totalPlayers}));
+  }, [metrics.totalPlayers]);
 
   // Save/Load - Supabase with localStorage fallback
   const saveConfig = async () => {
@@ -1133,25 +1224,49 @@ function App() {
   };
 
   const updBrandPartner = (id, newP) => setState(prev => ({
-    ...prev, brandPartners: prev.brandPartners.map(p => p.id === id ? newP : p)
+    ...prev, brandPartners: prev.brandPartners.map(p => {
+      if (p.id !== id) return p;
+      const maxPlayers = newP.pairsPerPartner * 2;
+      const confirmedPlayers = Math.min(newP.confirmedPlayers ?? maxPlayers, maxPlayers);
+      return {...newP, confirmedPlayers};
+    })
   }));
   const addBrandPartner = () => setState(prev => ({
     ...prev, brandPartners: [...prev.brandPartners, {
       id: newId(), name: `${prev.tierLabels.brand} ${prev.brandPartners.length + 1}`,
-      fee: 150000, pairsPerPartner: 3
+      fee: 150000, pairsPerPartner: 3, confirmedPlayers: 6
     }]
+  }));
+  const updateBrandPartnerConfirmed = (id, val) => setState(prev => ({
+    ...prev, brandPartners: prev.brandPartners.map(p => {
+      if (p.id !== id) return p;
+      const max = p.pairsPerPartner * 2;
+      return {...p, confirmedPlayers: Math.min(Math.max(0, val), max)};
+    })
   }));
   const delBrandPartner = (id) => setState(prev => ({
     ...prev, brandPartners: prev.brandPartners.filter(p => p.id !== id)
   }));
   const updCommunityPartner = (id, newP) => setState(prev => ({
-    ...prev, communityPartners: prev.communityPartners.map(p => p.id === id ? newP : p)
+    ...prev, communityPartners: prev.communityPartners.map(p => {
+      if (p.id !== id) return p;
+      const maxPlayers = newP.pairsPerPartner * 2;
+      const confirmedPlayers = Math.min(newP.confirmedPlayers ?? maxPlayers, maxPlayers);
+      return {...newP, confirmedPlayers};
+    })
   }));
   const addCommunityPartner = () => setState(prev => ({
     ...prev, communityPartners: [...prev.communityPartners, {
       id: newId(), name: `${prev.tierLabels.community} ${prev.communityPartners.length + 1}`,
-      fee: 40000, pairsPerPartner: 1
+      fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2
     }]
+  }));
+  const updateCommunityPartnerConfirmed = (id, val) => setState(prev => ({
+    ...prev, communityPartners: prev.communityPartners.map(p => {
+      if (p.id !== id) return p;
+      const max = p.pairsPerPartner * 2;
+      return {...p, confirmedPlayers: Math.min(Math.max(0, val), max)};
+    })
   }));
   const delCommunityPartner = (id) => setState(prev => ({
     ...prev, communityPartners: prev.communityPartners.filter(p => p.id !== id)
@@ -1175,6 +1290,93 @@ function App() {
   const addPerDayCost = () => setState(prev => ({
     ...prev, costs: { ...prev.costs, perDay: [...prev.costs.perDay, { id: `custom_${newId()}`, label: "Custom Per-Day Cost", amount: 0, deletable: true }] }
   }));
+
+  async function generateSchedule() {
+    if (!openaiKey) { alert('Please enter your OpenAI API key'); return; }
+    setScheduleLoading(true);
+    setScheduleError('');
+    setScheduleResult(null);
+
+    const totalPairs = Math.ceil(scheduleInputs.totalPlayers / 2);
+    const [sh, sm] = scheduleInputs.startTime.split(':').map(Number);
+    const [eh, em] = scheduleInputs.endTime.split(':').map(Number);
+    const matchMinutes = (eh * 60 + em) - (sh * 60 + sm);
+    const slotsPerCourt = Math.floor(matchMinutes / scheduleInputs.matchDuration);
+    const totalSlots = slotsPerCourt * scheduleInputs.courts;
+
+    const prompt = `You are a badminton tournament scheduling expert. Generate a complete schedule for:
+
+Event: ${state.eventName}
+Format: Doubles (pairs of 2 players)
+Total players: ${scheduleInputs.totalPlayers} (${totalPairs} pairs)
+Courts available: ${scheduleInputs.courts}
+Match start: ${scheduleInputs.startTime}
+Match end: ${scheduleInputs.endTime}
+Average match duration: ${scheduleInputs.matchDuration} minutes (including changeover)
+Total match slots available: ${totalSlots} across all courts
+
+Requirements:
+1. Design a tournament format (group stage + knockout bracket) that fits within the time window
+2. Group stage: round-robin within groups of 4-5 pairs
+3. After groups: top 2 from each group advance to knockout
+4. Include a 30-minute lunch break at 1:00 PM
+5. Every pair should play at minimum 3 matches guaranteed (group stage)
+6. ${scheduleInputs.recoveryEnabled ? `Recovery session: ${scheduleInputs.recoveryDuration} minutes starting ${scheduleInputs.recoveryTime} with fitness trainers` : 'No recovery session'}
+7. ${scheduleInputs.partyEnabled ? `Evening party/sundowner starts at ${scheduleInputs.partyTime}` : 'No evening party'}
+
+Return a JSON object with this exact structure:
+{
+  "format": "string describing the format chosen",
+  "totalPairs": number,
+  "groups": [{"name": "Group A", "pairs": 4, "matches": 6}],
+  "timeline": [
+    {"time": "08:00", "court1": "Group A: Pair 1 vs Pair 2", "court2": "Group B: Pair 5 vs Pair 6", "court3": "...", "court4": "..."},
+    ...more time slots...
+  ],
+  "knockoutBracket": {"QF": [], "SF": [], "Final": ""},
+  "daySchedule": [
+    {"phase": "Group Stage", "start": "08:00", "end": "12:30", "description": "Round robin within groups"},
+    {"phase": "Lunch Break", "start": "12:30", "end": "13:00", "description": ""},
+    {"phase": "Knockout", "start": "13:00", "end": "17:00", "description": "QF, SF, Final"},
+    {"phase": "Recovery Session", "start": "17:00", "end": "18:00", "description": "Cult fitness trainers"},
+    {"phase": "Sundowner Party", "start": "18:00", "end": "23:00", "description": "DJ, rain shower, food"}
+  ],
+  "recommendations": ["insight 1", "insight 2", "insight 3"],
+  "maxPlayersForFormat": number,
+  "utilizationPct": number
+}`;
+
+    try {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [{ role: 'user', content: prompt }],
+          response_format: { type: 'json_object' },
+          temperature: 0.3,
+        })
+      });
+      if (!res.ok) throw new Error(`API error ${res.status}`);
+      const data = await res.json();
+      const schedule = JSON.parse(data.choices[0].message.content);
+      setScheduleResult(schedule);
+    } catch(e) {
+      setScheduleError(`Failed to generate schedule: ${e.message}`);
+    } finally {
+      setScheduleLoading(false);
+    }
+  }
+
+  function phaseColor(phase) {
+    const p = phase.toLowerCase();
+    if (p.includes('group')) return '#2563eb';
+    if (p.includes('lunch') || p.includes('break')) return '#64748b';
+    if (p.includes('knockout') || p.includes('final') || p.includes('semi') || p.includes('quarter')) return '#7c3aed';
+    if (p.includes('recovery')) return '#16a34a';
+    if (p.includes('party') || p.includes('sundowner')) return '#d97706';
+    return '#0891b2';
+  }
 
   // Status color
   const pct = state.targetEarnings > 0 ? (metrics.rrcEarnings / state.targetEarnings) * 100 : 100;
@@ -1560,7 +1762,10 @@ function App() {
         </div>
 
         {/* RIGHT COLUMN */}
-        <div className={`right-col ${mobileTab==='results'?'tab-active':''}`}>
+        <div className={`right-col ${(mobileTab==='results'||mobileTab==='franchise'||mobileTab==='schedule')?'tab-active':''}`}>
+
+          {/* RESULTS SECTION */}
+          {(mobileTab === 'results' || !isMobile) && <div>
 
           {/* RRC Earnings Card */}
           <div className="earnings-card">
