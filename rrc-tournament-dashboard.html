@@ -354,17 +354,17 @@ const initialState = {
   targetEarnings: 150000,
   tierLabels: { brand: "Brand Partner", community: "Community Partner" },
   brandPartners: [
-    { id: 1, name: "Brand Partner 1", fee: 150000, pairsPerPartner: 3 },
-    { id: 2, name: "Brand Partner 2", fee: 150000, pairsPerPartner: 3 },
-    { id: 3, name: "Brand Partner 3", fee: 150000, pairsPerPartner: 3 },
+    { id: 1, name: "Brand Partner 1", fee: 150000, pairsPerPartner: 3, confirmedPlayers: 6 },
+    { id: 2, name: "Brand Partner 2", fee: 150000, pairsPerPartner: 3, confirmedPlayers: 6 },
+    { id: 3, name: "Brand Partner 3", fee: 150000, pairsPerPartner: 3, confirmedPlayers: 6 },
   ],
   communityPartners: [
-    { id: 1, name: "Community Partner 1", fee: 40000, pairsPerPartner: 1 },
-    { id: 2, name: "Community Partner 2", fee: 40000, pairsPerPartner: 1 },
-    { id: 3, name: "Community Partner 3", fee: 40000, pairsPerPartner: 1 },
-    { id: 4, name: "Community Partner 4", fee: 40000, pairsPerPartner: 1 },
-    { id: 5, name: "Community Partner 5", fee: 40000, pairsPerPartner: 1 },
-    { id: 6, name: "Community Partner 6", fee: 40000, pairsPerPartner: 1 },
+    { id: 1, name: "Community Partner 1", fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 },
+    { id: 2, name: "Community Partner 2", fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 },
+    { id: 3, name: "Community Partner 3", fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 },
+    { id: 4, name: "Community Partner 4", fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 },
+    { id: 5, name: "Community Partner 5", fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 },
+    { id: 6, name: "Community Partner 6", fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 },
   ],
   playerFee: 1000,
   sponsorship: {
@@ -1099,7 +1099,10 @@ function App() {
             .eq('config_name', 'default')
             .single();
           if (!error && data && data.config && data.config.brandPartners) {
-            setState(data.config);
+            const cfg = data.config;
+            cfg.brandPartners = cfg.brandPartners.map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+            cfg.communityPartners = cfg.communityPartners.map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+            setState(cfg);
             setCloudStatus('Loaded from cloud');
             setTimeout(() => setCloudStatus(''), 3000);
             return;
@@ -1111,7 +1114,11 @@ function App() {
         const saved = localStorage.getItem('rrcTournamentDashboard_v3');
         if (saved) {
           const parsed = JSON.parse(saved);
-          if (parsed.brandPartners && parsed.communityPartners) setState(parsed);
+          if (parsed.brandPartners && parsed.communityPartners) {
+            parsed.brandPartners = parsed.brandPartners.map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+            parsed.communityPartners = parsed.communityPartners.map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+            setState(parsed);
+          }
         }
       } catch(e) {}
     }
@@ -1172,7 +1179,10 @@ function App() {
           .eq('config_name', 'default')
           .single();
         if (!error && data && data.config && data.config.brandPartners) {
-          setState(data.config);
+          const cfg2 = data.config;
+          cfg2.brandPartners = cfg2.brandPartners.map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+          cfg2.communityPartners = cfg2.communityPartners.map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+          setState(cfg2);
           setCloudStatus('Loaded from cloud');
           setTimeout(() => setCloudStatus(''), 3000);
           return;
@@ -1182,7 +1192,12 @@ function App() {
     // Fallback: localStorage
     const saved = localStorage.getItem('rrcTournamentDashboard_v3');
     if (saved) {
-      try { setState(JSON.parse(saved)); setCloudStatus('Loaded from browser'); setTimeout(() => setCloudStatus(''), 3000); }
+      try {
+        const p2 = JSON.parse(saved);
+        p2.brandPartners = (p2.brandPartners || []).map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+        p2.communityPartners = (p2.communityPartners || []).map(p => ({...p, confirmedPlayers: p.confirmedPlayers ?? p.pairsPerPartner * 2}));
+        setState(p2); setCloudStatus('Loaded from browser'); setTimeout(() => setCloudStatus(''), 3000);
+      }
       catch(e) { alert('Could not load config'); }
     } else { alert('No saved config found'); }
   };
@@ -2050,6 +2065,330 @@ Return a JSON object with this exact structure:
             {cloudStatus && <div style={{marginTop:8, fontSize:12, color:'var(--green-mid)', fontWeight:500}}>{cloudStatus}</div>}
           </div>
 
+          </div>}
+
+          {/* FRANCHISE SECTION */}
+          {(mobileTab === 'franchise' || !isMobile) && (function() {
+            const allPartners = [
+              ...state.brandPartners.map(p => ({...p, tier: 'brand'})),
+              ...state.communityPartners.map(p => ({...p, tier: 'community'})),
+            ];
+            const totalCommitted = allPartners.reduce((s, p) => s + p.pairsPerPartner * 2, 0);
+            const totalConfirmed = allPartners.reduce((s, p) => s + (p.confirmedPlayers ?? p.pairsPerPartner * 2), 0);
+            const totalFranchiseRevenue = allPartners.reduce((s, p) => s + p.fee + p.pairsPerPartner * 2 * metrics.effectivePlayerFee, 0);
+            const confirmRate = totalCommitted > 0 ? ((totalConfirmed / totalCommitted) * 100).toFixed(1) : '0.0';
+            return (
+              <div>
+                <div className="right-section-title" style={{marginTop: isMobile ? 0 : 16}}>
+                  🏅 Franchise Dashboard
+                </div>
+                {allPartners.map(p => {
+                  const maxPlayers = p.pairsPerPartner * 2;
+                  const confirmed = p.confirmedPlayers ?? maxPlayers;
+                  const totalRev = p.fee + maxPlayers * metrics.effectivePlayerFee;
+                  const totalPerPlayer = totalRev / maxPlayers;
+                  const feePerPlayer = p.fee / maxPlayers;
+                  const stillToConfirm = maxPlayers - confirmed;
+                  const costPerPlayerPerDay = confirmed > 0 && state.eventDays > 0 ? p.fee / (confirmed * state.eventDays) : 0;
+                  const isValue = costPerPlayerPerDay <= 15000;
+                  const prizeback = dist.firstPartner + dist.first1;
+                  const netCostAfterPrize = p.fee - prizeback;
+                  const updateConfirmed = p.tier === 'brand'
+                    ? (v) => updateBrandPartnerConfirmed(p.id, v)
+                    : (v) => updateCommunityPartnerConfirmed(p.id, v);
+                  const barFill = maxPlayers > 0 ? (confirmed / maxPlayers) * 100 : 0;
+                  return (
+                    <div key={p.id} className="franchise-card">
+                      <div className="franchise-card-header">
+                        <div>
+                          <span className="franchise-partner-name">{p.name}</span>
+                          <span className={`franchise-tier-badge ${p.tier}`}>{p.tier === 'brand' ? 'Brand' : 'Community'}</span>
+                        </div>
+                        <div className="franchise-revenue">{formatINR(totalRev)}</div>
+                      </div>
+
+                      <div style={{marginBottom:8}}>
+                        <div style={{display:'flex', justifyContent:'space-between', fontSize:13, marginBottom:4}}>
+                          <span style={{color:'var(--text-secondary)'}}>Players committed: <strong>{confirmed} / {maxPlayers}</strong></span>
+                          <div className="stepper" style={{transform:'scale(0.85)', transformOrigin:'right center'}}>
+                            <button className="stepper-btn" onClick={() => updateConfirmed(confirmed - 1)}>-</button>
+                            <div className="stepper-val">{confirmed}</div>
+                            <button className="stepper-btn" onClick={() => updateConfirmed(confirmed + 1)}>+</button>
+                          </div>
+                        </div>
+                        <div className="commitment-bar-bg">
+                          <div className="commitment-bar-fill" style={{width: `${barFill}%`}} />
+                        </div>
+                        <div style={{fontSize:11, color: stillToConfirm > 0 ? 'var(--red-mid)' : 'var(--green-mid)', fontWeight:600}}>
+                          {stillToConfirm > 0 ? `${stillToConfirm} still to confirm` : 'All players confirmed'}
+                        </div>
+                      </div>
+
+                      <table className="franchise-mini-table">
+                        <thead>
+                          <tr>
+                            <th>Source</th>
+                            <th>Per Player</th>
+                            <th>Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr>
+                            <td>Franchise fee share</td>
+                            <td>{formatINR(feePerPlayer)}</td>
+                            <td>{formatINR(p.fee)}</td>
+                          </tr>
+                          <tr>
+                            <td>Player entry fee</td>
+                            <td>{formatINR(metrics.effectivePlayerFee)}</td>
+                            <td>{formatINR(maxPlayers * metrics.effectivePlayerFee)}</td>
+                          </tr>
+                          <tr style={{fontWeight:700, background:'var(--bg)'}}>
+                            <td>Total revenue</td>
+                            <td>{formatINR(totalPerPlayer)}</td>
+                            <td>{formatINR(totalRev)}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div style={{padding:'8px 0', borderTop:'1px solid var(--border)', borderBottom:'1px solid var(--border)', margin:'8px 0'}}>
+                        <div style={{fontSize:13, color:'var(--green-mid)', fontWeight:600}}>
+                          If they win 1st: Prize back = {formatINR(prizeback)}
+                        </div>
+                        <div style={{fontSize:12, color:'var(--text-secondary)', marginTop:2}}>
+                          Net cost after prize: {formatINR(netCostAfterPrize)}
+                        </div>
+                      </div>
+
+                      <div style={{display:'flex', alignItems:'center', marginTop:8}}>
+                        <span className="cost-per-player-big">{formatINR(costPerPlayerPerDay)}</span>
+                        <div style={{marginLeft:10}}>
+                          <div style={{fontSize:12, color:'var(--text-secondary)'}}>per player per day</div>
+                          <span className={`value-badge ${isValue ? 'value' : 'premium'}`}>{isValue ? 'Value' : 'Premium'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+
+                <div className="card" style={{marginTop:4}}>
+                  <div className="chart-title">Franchise Summary</div>
+                  <div className="summary-row">
+                    <span className="label">Total partners</span>
+                    <span className="value">{state.brandPartners.length} brand + {state.communityPartners.length} community</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="label">Total committed players</span>
+                    <span className="value">{totalCommitted}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="label">Total confirmed players</span>
+                    <span className="value">{totalConfirmed}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span className="label">Confirmation rate</span>
+                    <span className="value" style={{color: Number(confirmRate) >= 100 ? 'var(--green-mid)' : 'var(--amber-mid)'}}>{confirmRate}%</span>
+                  </div>
+                  <div className="summary-row" style={{borderTop:'2px solid var(--border-strong)', paddingTop:8, marginTop:4}}>
+                    <span className="label" style={{fontWeight:700}}>Total franchise revenue</span>
+                    <span className="value" style={{color:'var(--blue-mid)'}}>{formatINR(totalFranchiseRevenue)}</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* SCHEDULE SECTION */}
+          {(mobileTab === 'schedule' || !isMobile) && (
+            <div className="schedule-section">
+              <div className="right-section-title" style={{marginTop: isMobile ? 0 : 16}}>
+                🗓️ AI Schedule Predictor
+              </div>
+
+              <div className="card">
+                <div className="field-row">
+                  <label className="field-label">OpenAI API Key</label>
+                  <input type="password" value={openaiKey} onChange={e => setOpenaiKey(e.target.value)} placeholder="sk-..." />
+                  <span className="field-hint">Stored in browser only. Used to generate the match schedule.</span>
+                </div>
+
+                <div style={{display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
+                  <div className="field-row">
+                    <label className="field-label">Total Players</label>
+                    <input type="number" min="2" value={scheduleInputs.totalPlayers}
+                      onChange={e => setScheduleInputs(prev => ({...prev, totalPlayers: Number(e.target.value)||0}))} />
+                  </div>
+                  <div className="field-row">
+                    <label className="field-label">Courts (1-8)</label>
+                    <input type="number" min="1" max="8" value={scheduleInputs.courts}
+                      onChange={e => setScheduleInputs(prev => ({...prev, courts: Math.min(8, Math.max(1, Number(e.target.value)||1))}))} />
+                  </div>
+                  <div className="field-row">
+                    <label className="field-label">Match Start</label>
+                    <input type="text" value={scheduleInputs.startTime}
+                      onChange={e => setScheduleInputs(prev => ({...prev, startTime: e.target.value}))} placeholder="08:00" />
+                  </div>
+                  <div className="field-row">
+                    <label className="field-label">Match End</label>
+                    <input type="text" value={scheduleInputs.endTime}
+                      onChange={e => setScheduleInputs(prev => ({...prev, endTime: e.target.value}))} placeholder="17:00" />
+                  </div>
+                </div>
+
+                <div className="field-row">
+                  <label className="field-label">Avg Match Duration (mins)</label>
+                  <div className="seg-btns">
+                    {[20, 25, 30, 35, 40].map(n => (
+                      <button key={n} className={`seg-btn ${scheduleInputs.matchDuration === n ? 'active' : ''}`}
+                        onClick={() => setScheduleInputs(prev => ({...prev, matchDuration: n}))}>{n}</button>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{marginBottom:8}}>
+                  <div className="toggle-row">
+                    <Toggle on={scheduleInputs.recoveryEnabled} onChange={v => setScheduleInputs(prev => ({...prev, recoveryEnabled: v}))} />
+                    <span className="toggle-label">Recovery Session</span>
+                  </div>
+                  {scheduleInputs.recoveryEnabled && (
+                    <div style={{paddingLeft:50, marginTop:6, display:'grid', gridTemplateColumns:'1fr 1fr', gap:10}}>
+                      <div className="field-row">
+                        <label className="field-label">Duration (mins)</label>
+                        <input type="number" min="15" max="120" value={scheduleInputs.recoveryDuration}
+                          onChange={e => setScheduleInputs(prev => ({...prev, recoveryDuration: Number(e.target.value)||60}))} />
+                      </div>
+                      <div className="field-row">
+                        <label className="field-label">Start Time</label>
+                        <input type="text" value={scheduleInputs.recoveryTime}
+                          onChange={e => setScheduleInputs(prev => ({...prev, recoveryTime: e.target.value}))} placeholder="17:00" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{marginBottom:8}}>
+                  <div className="toggle-row">
+                    <Toggle on={scheduleInputs.partyEnabled} onChange={v => setScheduleInputs(prev => ({...prev, partyEnabled: v}))} />
+                    <span className="toggle-label">Sundowner Party</span>
+                  </div>
+                  {scheduleInputs.partyEnabled && (
+                    <div style={{paddingLeft:50, marginTop:6}}>
+                      <div className="field-row">
+                        <label className="field-label">Party Start Time</label>
+                        <input type="text" value={scheduleInputs.partyTime}
+                          onChange={e => setScheduleInputs(prev => ({...prev, partyTime: e.target.value}))} placeholder="18:00" />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <button className="generate-btn" disabled={scheduleLoading} onClick={generateSchedule}>
+                  {scheduleLoading ? 'Generating schedule...' : 'Generate AI Schedule'}
+                </button>
+
+                {scheduleError && (
+                  <div style={{background:'var(--red-bg)', border:'1px solid #fca5a5', borderRadius:6, padding:'8px 12px', fontSize:13, color:'var(--red)', marginBottom:8}}>
+                    {scheduleError}
+                  </div>
+                )}
+              </div>
+
+              {scheduleResult && (
+                <div>
+                  <div className="schedule-stats-grid">
+                    <div className="schedule-stat">
+                      <div className="schedule-stat-val" style={{fontSize:14, wordBreak:'break-word'}}>{scheduleResult.format || '-'}</div>
+                      <div className="schedule-stat-lbl">Format</div>
+                    </div>
+                    <div className="schedule-stat">
+                      <div className="schedule-stat-val">{scheduleResult.totalPairs || '-'}</div>
+                      <div className="schedule-stat-lbl">Total Pairs</div>
+                    </div>
+                    <div className="schedule-stat">
+                      <div className="schedule-stat-val">{scheduleResult.utilizationPct != null ? scheduleResult.utilizationPct + '%' : '-'}</div>
+                      <div className="schedule-stat-lbl">Court Utilization</div>
+                    </div>
+                    <div className="schedule-stat">
+                      <div className="schedule-stat-val">{scheduleResult.maxPlayersForFormat != null ? scheduleResult.maxPlayersForFormat : '-'}</div>
+                      <div className="schedule-stat-lbl">Max Capacity</div>
+                    </div>
+                  </div>
+
+                  {scheduleResult.daySchedule && scheduleResult.daySchedule.length > 0 && (
+                    <div className="card" style={{marginBottom:12}}>
+                      <div className="chart-title">Day Timeline</div>
+                      <div className="day-timeline">
+                        {scheduleResult.daySchedule.map(phase => {
+                          const parsedStart = phase.start ? phase.start.split(':').map(Number) : [8,0];
+                          const parsedEnd = phase.end ? phase.end.split(':').map(Number) : [9,0];
+                          const startMins = parsedStart[0] * 60 + (parsedStart[1] || 0);
+                          const endMins = parsedEnd[0] * 60 + (parsedEnd[1] || 0);
+                          const duration = Math.max(0, endMins - startMins);
+                          const totalDay = 15 * 60;
+                          const widthPct = (duration / totalDay) * 100;
+                          return (
+                            <div key={phase.phase} className="timeline-block"
+                              style={{width: `${widthPct}%`, background: phaseColor(phase.phase), minWidth: widthPct > 0 ? '24px' : '0'}}>
+                              <div className="timeline-phase">{phase.phase}</div>
+                              <div className="timeline-time">{phase.start}-{phase.end}</div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {scheduleResult.timeline && scheduleResult.timeline.length > 0 && (
+                    <div className="card" style={{marginBottom:12}}>
+                      <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8}}>
+                        <div className="chart-title" style={{marginBottom:0}}>Court Schedule</div>
+                        <button style={{fontSize:12, color:'var(--blue-mid)', background:'none', border:'none', cursor:'pointer', padding:0}}
+                          onClick={() => setShowAllSlots(s => !s)}>
+                          {showAllSlots ? 'Show less' : `Show all (${scheduleResult.timeline.length} slots)`}
+                        </button>
+                      </div>
+                      <div className="table-wrap">
+                        <table className="schedule-court-table">
+                          <thead>
+                            <tr>
+                              <th>Time</th>
+                              <th>Court 1</th>
+                              <th>Court 2</th>
+                              <th>Court 3</th>
+                              <th>Court 4</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {(showAllSlots ? scheduleResult.timeline : scheduleResult.timeline.slice(0, 8)).map((slot, i) => (
+                              <tr key={i}>
+                                <td style={{whiteSpace:'nowrap', fontWeight:600}}>{slot.time}</td>
+                                <td title={slot.court1}>{slot.court1 || '-'}</td>
+                                <td title={slot.court2}>{slot.court2 || '-'}</td>
+                                <td title={slot.court3}>{slot.court3 || '-'}</td>
+                                <td title={slot.court4}>{slot.court4 || '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {scheduleResult.recommendations && scheduleResult.recommendations.length > 0 && (
+                    <div className="card" style={{marginBottom:12}}>
+                      <div className="chart-title">Recommendations</div>
+                      <ul className="recommendation-list">
+                        {scheduleResult.recommendations.map((r, i) => (
+                          <li key={i}>{r}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
       </div>
 
@@ -2062,6 +2401,14 @@ Return a JSON object with this exact structure:
         <button className={`mobile-tab ${mobileTab==='results'?'active':''}`} onClick={()=>setMobileTab('results')}>
           <span className="mobile-tab-icon">📊</span>
           <span>Results</span>
+        </button>
+        <button className={`mobile-tab ${mobileTab==='franchise'?'active':''}`} onClick={()=>setMobileTab('franchise')}>
+          <span className="mobile-tab-icon">🏅</span>
+          <span>Franchise</span>
+        </button>
+        <button className={`mobile-tab ${mobileTab==='schedule'?'active':''}`} onClick={()=>setMobileTab('schedule')}>
+          <span className="mobile-tab-icon">🗓️</span>
+          <span>Schedule</span>
         </button>
       </div>
 
