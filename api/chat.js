@@ -108,6 +108,7 @@ export default async function handler(req, res) {
         }),
       });
       const data = await response.json();
+      if (!response.ok) throw new Error(data.error?.message || 'Anthropic API error');
       return res.status(200).json({ message: data.content[0].text, model: 'claude' });
     }
   } catch (err) {

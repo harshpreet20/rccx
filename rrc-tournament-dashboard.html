@@ -1175,11 +1175,12 @@ function FranchiseRegistrationScreen({ user, state, onComplete }) {
         registration_fee: 5000,
       }).select().single();
       if (foErr) throw foErr;
-      await supabase.from('rrc_registration_payments').insert({
+      const { error: payErr } = await supabase.from('rrc_registration_payments').insert({
         franchise_owner_id: fo.id,
         amount: 5000,
         payment_ref: paymentRef || null,
       });
+      if (payErr) throw payErr;
       onComplete(fo);
     } catch(e) { setError(e.message); }
     setLoading(false);
@@ -1324,18 +1325,23 @@ function FranchiseOwnerApp({ user, franchiseProfile, state, onSignOut }) {
   useEffect(() => { loadData(); }, []);
 
   async function loadData() {
-    const { data: pl } = await supabase.from('rrc_franchise_players')
-      .select('*').eq('franchise_owner_id', franchiseProfile.id).order('pair_number,slot_in_pair');
-    setPlayers(pl || []);
-    // init pairData from loaded players
-    const pd = {};
-    (pl || []).forEach(p => {
-      if (!pd[p.pair_number]) pd[p.pair_number] = [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}];
-      pd[p.pair_number][p.slot_in_pair - 1] = { name: p.player_name||'', contact: p.player_contact||'', committed: p.committed||false, id: p.id };
-    });
-    setPairData(pd);
-    const { data: fx } = await supabase.from('rrc_tournament_fixtures').select('*').eq('config_name','default').single();
-    setFixtures(fx ? fx.fixtures : null);
+    try {
+      const { data: pl, error: plErr } = await supabase.from('rrc_franchise_players')
+        .select('*').eq('franchise_owner_id', franchiseProfile.id).order('pair_number,slot_in_pair');
+      if (plErr) throw plErr;
+      setPlayers(pl || []);
+      const pd = {};
+      (pl || []).forEach(p => {
+        if (!pd[p.pair_number]) pd[p.pair_number] = [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}];
+        pd[p.pair_number][p.slot_in_pair - 1] = { name: p.player_name||'', contact: p.player_contact||'', committed: p.committed||false, id: p.id };
+      });
+      setPairData(pd);
+      const { data: fx, error: fxErr } = await supabase.from('rrc_tournament_fixtures').select('*').eq('config_name','default').maybeSingle();
+      if (fxErr) console.error('Fixtures load error:', fxErr);
+      setFixtures(fx ? fx.fixtures : null);
+    } catch(err) {
+      console.error('loadData error:', err);
+    }
     setLoading(false);
   }
 
@@ -1355,22 +1361,29 @@ function FranchiseOwnerApp({ user, franchiseProfile, state, onSignOut }) {
 
   async function savePair(pairNum) {
     setSavingPairs(prev => ({...prev, [pairNum]: true}));
-    const slots = pairData[pairNum] || [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}];
-    for (let i = 0; i < 2; i++) {
-      const sl = slots[i] || {name:'',contact:'',committed:false};
-      if (sl.id) {
-        await supabase.from('rrc_franchise_players').update({
-          player_name: sl.name, player_contact: sl.contact, committed: sl.committed,
-        }).eq('id', sl.id);
-      } else {
-        await supabase.from('rrc_franchise_players').insert({
-          franchise_owner_id: franchiseProfile.id,
-          pair_number: pairNum, slot_in_pair: i+1,
-          player_name: sl.name, player_contact: sl.contact, committed: sl.committed,
-        });
+    try {
+      const slots = pairData[pairNum] || [{name:'',contact:'',committed:false},{name:'',contact:'',committed:false}];
+      for (let i = 0; i < 2; i++) {
+        const sl = slots[i] || {name:'',contact:'',committed:false};
+        if (sl.id) {
+          const { error } = await supabase.from('rrc_franchise_players').update({
+            player_name: sl.name, player_contact: sl.contact, committed: sl.committed,
+          }).eq('id', sl.id);
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.from('rrc_franchise_players').insert({
+            franchise_owner_id: franchiseProfile.id,
+            pair_number: pairNum, slot_in_pair: i+1,
+            player_name: sl.name, player_contact: sl.contact, committed: sl.committed,
+          });
+          if (error) throw error;
+        }
       }
+      await loadData();
+    } catch(err) {
+      console.error('savePair error:', err);
+      alert(`Error saving pair: ${err.message}`);
     }
-    await loadData();
     setSavingPairs(prev => ({...prev, [pairNum]: false}));
   }
 
@@ -1649,35 +1662,60 @@ function OrganizerLeagueTab({ state }) {
 
   async function loadPending() {
     setLoadingPending(true);
-    const { data } = await supabase.from('rrc_franchise_owners')
-      .select('*, rrc_registration_payments(*)').eq('registration_paid', false);
-    setPendingFOs(data || []);
+    try {
+      const { data, error } = await supabase.from('rrc_franchise_owners')
+        .select('*, rrc_registration_payments(*)').eq('registration_paid', false).order('created_at', { ascending: false });
+      if (error) throw error;
+      setPendingFOs(data || []);
+    } catch(err) {
+      console.error('loadPending error:', err);
+      alert(`Failed to load pending registrations: ${err.message}`);
+    }
     setLoadingPending(false);
   }
 
   async function loadSavedFixtures() {
-    const { data } = await supabase.from('rrc_tournament_fixtures').select('*').eq('config_name','default').single();
-    if (data) setSavedFixtures(data.fixtures);
+    try {
+      const { data, error } = await supabase.from('rrc_tournament_fixtures').select('*').eq('config_name','default').maybeSingle();
+      if (error) throw error;
+      if (data) setSavedFixtures(data.fixtures);
+    } catch(err) {
+      console.error('loadSavedFixtures error:', err);
+    }
   }
 
   async function approveRegistration(fo) {
     setApprovingId(fo.id);
-    await supabase.from('rrc_franchise_owners').update({ registration_paid: true }).eq('id', fo.id);
-    if (fo.rrc_registration_payments && fo.rrc_registration_payments[0]) {
-      await supabase.from('rrc_registration_payments').update({ approved_at: new Date().toISOString() }).eq('id', fo.rrc_registration_payments[0].id);
+    try {
+      const { error: err1 } = await supabase.from('rrc_franchise_owners').update({ registration_paid: true }).eq('id', fo.id);
+      if (err1) throw err1;
+      if (fo.rrc_registration_payments && fo.rrc_registration_payments[0]) {
+        const { error: err2 } = await supabase.from('rrc_registration_payments').update({ approved_at: new Date().toISOString() }).eq('id', fo.rrc_registration_payments[0].id);
+        if (err2) throw err2;
+      }
+      await loadPending();
+    } catch(err) {
+      console.error('approveRegistration error:', err);
+      alert(`Error approving registration: ${err.message}`);
     }
     setApprovingId(null);
-    loadPending();
   }
 
   async function saveFixtures() {
     if (!fixturePreview) return;
     setSavingFixtures(true);
-    await supabase.from('rrc_tournament_fixtures').upsert({ config_name: 'default', fixtures: fixturePreview, results: {} }, { onConflict: 'config_name' });
-    setSavedFixtures(fixturePreview);
+    try {
+      const { error } = await supabase.from('rrc_tournament_fixtures').upsert({ config_name: 'default', fixtures: fixturePreview, results: {} }, { onConflict: 'config_name' });
+      if (error) throw error;
+      setSavedFixtures(fixturePreview);
+      setSavedMsg('Fixtures saved and published!');
+      setTimeout(() => setSavedMsg(''), 3000);
+    } catch(err) {
+      console.error('saveFixtures error:', err);
+      setSavedMsg(`Error saving fixtures: ${err.message}`);
+      setTimeout(() => setSavedMsg(''), 5000);
+    }
     setSavingFixtures(false);
-    setSavedMsg('Fixtures saved and published!');
-    setTimeout(() => setSavedMsg(''), 3000);
   }
 
   return (
@@ -1808,13 +1846,18 @@ function App() {
 
   async function resolveUserRole(user) {
     setAuthUser(user);
-    const { data: adminRow } = await supabase.from('admin_users').select('role').eq('email', user.email).maybeSingle();
-    if (adminRow) { setUserRole('organizer'); return; }
-    const { data: org } = await supabase.from('rrc_organizers').select('*').eq('user_id', user.id).maybeSingle();
-    if (org) { setUserRole('organizer'); return; }
-    const { data: fo } = await supabase.from('rrc_franchise_owners').select('*').eq('user_id', user.id).maybeSingle();
-    if (fo) { setFranchiseProfile(fo); setUserRole('franchise_owner'); return; }
-    setUserRole('new_user');
+    try {
+      const { data: adminRow } = await supabase.from('admin_users').select('role').eq('email', user.email).maybeSingle();
+      if (adminRow?.role) { setUserRole('organizer'); return; }
+      const { data: org } = await supabase.from('rrc_organizers').select('*').eq('user_id', user.id).maybeSingle();
+      if (org) { setUserRole('organizer'); return; }
+      const { data: fo } = await supabase.from('rrc_franchise_owners').select('*').eq('user_id', user.id).maybeSingle();
+      if (fo) { setFranchiseProfile(fo); setUserRole('franchise_owner'); return; }
+      setUserRole('new_user');
+    } catch(err) {
+      console.error('resolveUserRole error:', err);
+      setUserRole('new_user');
+    }
   }
 
   // Load from Supabase on mount (fall back to localStorage)
@@ -2098,7 +2141,18 @@ Return a JSON object with this exact structure:
       });
       if (!res.ok) throw new Error(`API error ${res.status}`);
       const data = await res.json();
-      const schedule = JSON.parse(data.choices[0].message.content);
+      if (data.error) throw new Error(data.error.message || data.error);
+      let schedule;
+      try {
+        schedule = typeof data.choices[0].message.content === 'string'
+          ? JSON.parse(data.choices[0].message.content)
+          : data.choices[0].message.content;
+      } catch(parseErr) {
+        throw new Error('Invalid schedule format returned by AI');
+      }
+      if (!schedule.format || !schedule.timeline || !schedule.daySchedule) {
+        throw new Error('Incomplete schedule structure from AI');
+      }
       setScheduleResult(schedule);
     } catch(e) {
       setScheduleError(`Failed to generate schedule: ${e.message}`);

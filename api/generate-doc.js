@@ -89,7 +89,7 @@ Generate an HTML report showing investment breakdown, prize ROI scenarios, per-p
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-opus-4-8',
         max_tokens: 4096,
         messages: [{ role: 'user', content: prompts[docType] || prompts.partner_pitch }],
       }),
