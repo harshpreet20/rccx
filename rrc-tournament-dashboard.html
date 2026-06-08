@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#ffffff">
 <title>RRC Tournament Dashboard</title>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -15,19 +12,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <style>
 :root {
-  --bg: #f0f4ff;
+  --bg: #f7f8fa;
   --surface: #ffffff;
-  --border: #dde3f0;
-  --border-strong: #c4cfe8;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
+  --border: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
   --text-muted: #94a3b8;
-  --green: #14532d; --green-bg: #dcfce7; --green-mid: #16a34a;
-  --red: #7f1d1d; --red-bg: #fee2e2; --red-mid: #dc2626;
-  --amber: #78350f; --amber-bg: #fef3c7; --amber-mid: #d97706;
-  --blue: #1e3a8a; --blue-bg: #e8f0ff; --blue-mid: #2563eb;
-  --purple: #4c1d95; --purple-bg: #f3f0ff; --purple-mid: #7c3aed;
-  --brand1: #6366f1; --brand2: #8b5cf6;
+  --green: #166534; --green-bg: #dcfce7; --green-mid: #16a34a;
+  --red: #991b1b; --red-bg: #fee2e2; --red-mid: #dc2626;
+  --amber: #92400e; --amber-bg: #fef3c7; --amber-mid: #d97706;
+  --blue: #1e40af; --blue-bg: #eff6ff; --blue-mid: #2563eb;
+  --purple: #5b21b6; --purple-bg: #f5f3ff; --purple-mid: #7c3aed;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; line-height: 1.5; background: var(--bg); color: var(--text-primary); }
@@ -40,27 +36,24 @@ input[type="range"] { width: 100%; accent-color: var(--blue-mid); }
 button { cursor: pointer; }
 .sticky-header {
   position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 100;
-  background: linear-gradient(90deg, #1e3a8a 0%, #6366f1 60%, #8b5cf6 100%);
-  border-bottom: none;
+  background: var(--surface); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; padding: 0 14px; gap: 10px;
-  box-shadow: 0 2px 12px rgba(99,102,241,0.25);
 }
-.header-logo { font-size: 14px; font-weight: 800; color: #fff; white-space: nowrap; letter-spacing: 0.03em; }
+.header-logo { font-size: 13px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
 .header-subtitle { display: none; }
 .header-spacer { flex: 1; }
 .header-tag {
-  background: rgba(255,255,255,0.18); color: #fff; border: 1px solid rgba(255,255,255,0.3);
+  background: var(--blue-bg); color: var(--blue); border: 1px solid #bfdbfe;
   border-radius: 20px; padding: 2px 9px; font-size: 11px; font-weight: 600; white-space: nowrap;
-  backdrop-filter: blur(4px);
 }
 .main-layout {
   margin-top: 44px; height: calc(100vh - 44px); display: flex;
 }
 .left-col {
   width: 37%; overflow-y: auto; border-right: 1px solid var(--border);
-  padding: 16px; padding-bottom: 80px; position: relative;
+  padding: 16px; padding-bottom: 100px; position: relative;
 }
-.right-col { width: 63%; overflow-y: auto; padding: 16px; padding-bottom: 80px; }
+.right-col { width: 63%; overflow-y: auto; padding: 16px; }
 .left-sticky-footer {
   position: fixed; bottom: 0; left: 0; width: 37%;
   background: var(--surface); border-top: 1px solid var(--border);
@@ -68,8 +61,7 @@ button { cursor: pointer; }
 }
 .card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 16px; margin-bottom: 12px;
-  box-shadow: 0 1px 4px rgba(30,58,138,0.05);
+  border-radius: 10px; padding: 16px; margin-bottom: 12px;
 }
 .section-header {
   display: flex; align-items: center; gap: 8px; padding: 10px 0 8px 0;
@@ -145,18 +137,8 @@ button { cursor: pointer; }
 .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
 .metric-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 14px;
-  box-shadow: 0 1px 4px rgba(30,58,138,0.06);
+  border-radius: 10px; padding: 14px;
 }
-.metric-card.blue-card { background: linear-gradient(135deg, #2563eb 0%, #6366f1 100%); border: none; }
-.metric-card.green-card { background: linear-gradient(135deg, #16a34a 0%, #0d9488 100%); border: none; }
-.metric-card.amber-card { background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%); border: none; }
-.metric-card.blue-card .metric-label,
-.metric-card.green-card .metric-label,
-.metric-card.amber-card .metric-label { color: rgba(255,255,255,0.8); }
-.metric-card.blue-card .metric-value,
-.metric-card.green-card .metric-value,
-.metric-card.amber-card .metric-value { color: #fff; }
 .metric-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; margin-bottom: 4px; }
 .metric-value { font-size: 22px; font-weight: 700; color: var(--text-primary); }
 .metric-value.green { color: var(--green-mid); }
@@ -165,15 +147,9 @@ button { cursor: pointer; }
 .metric-value.purple { color: var(--purple-mid); }
 .metric-value.amber { color: var(--amber-mid); }
 .earnings-card {
-  background: linear-gradient(135deg, #1e3a8a 0%, #6366f1 100%);
-  border: none; border-radius: 14px; padding: 20px; margin-bottom: 12px;
-  box-shadow: 0 4px 16px rgba(99,102,241,0.3);
-  color: #fff;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 20px; margin-bottom: 12px;
 }
-.earnings-card .metric-label,
-.earnings-card .variance-row .lbl { color: rgba(255,255,255,0.75); }
-.earnings-card .variance-row .val,
-.earnings-card .earnings-big { color: #fff; }
 .earnings-big { font-size: 42px; font-weight: 800; margin-bottom: 4px; }
 .earnings-big.green { color: var(--green-mid); }
 .earnings-big.red { color: var(--red-mid); }
@@ -241,17 +217,14 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
   flex: 1; display: flex; flex-direction: column; align-items: center;
   justify-content: center; gap: 2px; border: none; background: transparent;
   font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer;
-  transition: color 0.15s;
 }
-.mobile-tab.active { color: var(--brand1); border-top: 2px solid var(--brand1); }
+.mobile-tab.active { color: var(--blue-mid); border-top: 2px solid var(--blue-mid); }
 .mobile-tab-icon { font-size: 18px; }
 
 /* Franchise cards */
 .franchise-card {
   background: var(--surface); border: 1px solid var(--border);
-  border-left: 4px solid var(--brand1);
-  border-radius: 12px; padding: 16px; margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.08);
+  border-radius: 10px; padding: 16px; margin-bottom: 12px;
 }
 .franchise-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
 .franchise-partner-name { font-size: 16px; font-weight: 700; color: var(--text-primary); }
@@ -287,8 +260,8 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .fo-header { position: fixed; top: 0; left: 0; right: 0; height: 44px; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 14px; gap: 10px; }
 .fo-body { margin-top: 44px; padding: 16px; padding-bottom: 80px; max-width: 600px; margin-left: auto; margin-right: auto; }
 .fo-tab-bar { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: var(--surface); border-top: 1px solid var(--border); z-index: 100; }
-.fo-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: none; background: transparent; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: color 0.15s; }
-.fo-tab.active { color: var(--brand1); border-top: 2px solid var(--brand1); }
+.fo-tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: none; background: transparent; font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; }
+.fo-tab.active { color: var(--blue-mid); border-top: 2px solid var(--blue-mid); }
 .fo-tab-icon { font-size: 18px; }
 .pair-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; margin-bottom: 12px; }
 .pair-card-title { font-size: 14px; font-weight: 700; margin-bottom: 10px; color: var(--text-primary); }
@@ -318,64 +291,11 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
 .recommendation-list li { padding: 6px 0; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: flex-start; }
 .recommendation-list li::before { content: ""; color: var(--green-mid); flex-shrink: 0; margin-top: 2px; }
 .generate-btn {
-  width: 100%; height: 48px;
-  background: linear-gradient(90deg, #2563eb 0%, #6366f1 100%); color: #fff;
+  width: 100%; height: 48px; background: var(--blue-mid); color: #fff;
   border: none; border-radius: 8px; font-size: 15px; font-weight: 700; cursor: pointer; margin: 12px 0;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.3); transition: opacity 0.15s;
 }
-.generate-btn:hover { opacity: 0.9; }
 .generate-btn:hover { background: var(--blue); }
 .generate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.auth-screen { padding-bottom: 80px; }
-.fo-content { padding-bottom: 80px; overflow-y: auto; }
-
-/* Chatbot FAB and panel */
-.chat-fab {
-  position: fixed; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); right: 16px;
-  width: 52px; height: 52px; border-radius: 50%; background: var(--blue-mid);
-  border: none; box-shadow: 0 4px 16px rgba(37,99,235,0.4); z-index: 200;
-  display: flex; align-items: center; justify-content: center; cursor: pointer;
-  font-size: 22px; transition: transform 0.2s;
-}
-.chat-fab:hover { transform: scale(1.08); }
-.chat-fab:active { transform: scale(0.95); }
-.chat-panel {
-  position: fixed; bottom: calc(56px + env(safe-area-inset-bottom, 0px)); right: 0; left: 0;
-  height: 70vh; max-height: 560px; background: var(--surface);
-  border-top: 1px solid var(--border); border-radius: 16px 16px 0 0;
-  box-shadow: 0 -4px 24px rgba(0,0,0,0.12); z-index: 199;
-  display: flex; flex-direction: column; transform: translateY(100%);
-  transition: transform 0.3s ease; overflow: hidden;
-}
-.chat-panel.open { transform: translateY(0); }
-@media (min-width: 768px) {
-  .chat-panel {
-    left: auto; width: 360px; right: 16px; bottom: 80px;
-    border-radius: 16px; height: 500px; max-height: 500px; border: 1px solid var(--border);
-  }
-  .chat-fab { bottom: 24px; }
-}
-.chat-header {
-  padding: 12px 16px; border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 10px; flex-shrink: 0;
-}
-.chat-header-title { font-size: 14px; font-weight: 700; flex: 1; }
-.chat-header-role { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
-.chat-header-role.organizer { background: var(--blue-bg); color: var(--blue); }
-.chat-header-role.franchise_owner { background: var(--purple-bg); color: var(--purple); }
-.chat-header-role.public { background: var(--bg); color: var(--text-secondary); }
-.chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
-.chat-msg { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.5; }
-.chat-msg.user { background: var(--blue-mid); color: #fff; align-self: flex-end; border-radius: 12px 12px 2px 12px; }
-.chat-msg.assistant { background: var(--bg); color: var(--text-primary); align-self: flex-start; border-radius: 12px 12px 12px 2px; }
-.chat-msg.timeout { background: var(--amber-bg); color: var(--amber); }
-.chat-model-badge { font-size: 9px; opacity: 0.6; margin-top: 2px; }
-.chat-input-row { padding: 10px 12px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
-.chat-input-row input { flex: 1; height: 40px; border: 1px solid var(--border); border-radius: 20px; padding: 0 14px; font-size: 14px; }
-.chat-send-btn { width: 40px; height: 40px; border-radius: 50%; background: var(--blue-mid); border: none; color: #fff; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
-.chat-send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.chat-timeout-bar { height: 3px; background: var(--amber-mid); transition: width 1s linear; }
-
 @media (max-width: 768px) {
   .schedule-stats-grid { grid-template-columns: repeat(2, 1fr); }
   .schedule-court-table th:nth-child(4),
@@ -431,19 +351,9 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
   .partner-summary-table td:nth-child(7),
   .partner-summary-table th:nth-child(8),
   .partner-summary-table td:nth-child(8) { display: none; }
-  /* Safe-area-aware layout: header(44) + tab bar(56) + safe area inset */
-  .main-layout { height: calc(100vh - 44px - 56px - env(safe-area-inset-bottom, 0px)); overflow: hidden; }
-  .left-col {
-    width: 100%; border-right: none; height: 100%; display: none;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px)) 12px;
-  }
-  .left-col.tab-active { display: block; }
-  .right-col {
-    width: 100%; height: 100%; display: none;
-    overflow-y: auto; -webkit-overflow-scrolling: touch;
-    padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px)) 12px;
-  }
+  .left-col { width: 100%; border-right: none; height: 100%; display: none; padding-bottom: 16px; overflow-y: auto; }
+  .left-col.tab-active { display: block; overflow-y: auto; }
+  .right-col { width: 100%; height: 100%; display: none; overflow-y: auto; }
   .right-col.tab-active { display: block; }
   .left-sticky-footer { display: none; }
   .mobile-tab-bar { display: flex; }
@@ -451,38 +361,13 @@ tr.highlight td { background: #fefce8; font-weight: 600; }
   .metric-grid { grid-template-columns: 1fr 1fr; }
   .metric-grid .metric-card:first-child { grid-column: 1 / -1; }
   .tables-row { grid-template-columns: 1fr; }
-  input[type="text"], input[type="number"] { height: 44px; }
+  input[type="text"], input[type="number"] { height: 44px; font-size: 16px; }
   .seg-btn { height: 44px; }
   .stepper-btn { width: 44px; height: 44px; }
   .stepper-val { height: 44px; }
   .toggle { width: 48px; height: 26px; }
-  .section-header { min-height: 48px; padding: 14px 0; }
+  .section-header { min-height: 48px; }
   .field-label { font-size: 13px; }
-  /* 16px on ALL inputs prevents iOS auto-zoom */
-  input, select, textarea { font-size: 16px !important; }
-  .franchise-card { padding: 12px; }
-  .metric-card { min-height: 72px; }
-  .earnings-big { font-size: 32px; }
-  .chart-wrap { overflow: hidden; }
-  .generate-btn { font-size: 14px; width: 100%; }
-  /* Tab bars: full safe area */
-  .mobile-tab-bar {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    height: calc(56px + env(safe-area-inset-bottom, 0px));
-  }
-  .fo-tab-bar {
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    height: calc(56px + env(safe-area-inset-bottom, 0px));
-  }
-  /* Franchise owner full-screen layout */
-  .fo-body {
-    padding: 12px 12px calc(96px + env(safe-area-inset-bottom, 0px)) 12px;
-    min-height: calc(100vh - 44px - 56px - env(safe-area-inset-bottom, 0px));
-  }
-  /* Chat FAB above tab bar */
-  .chat-fab { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
-  /* Chat panel clears tab bar */
-  .chat-panel { bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
 }
 </style>
 </head>
@@ -593,9 +478,10 @@ function computeMetrics(state) {
   const contingencyAmount = preContingencyTotal * (costs.contingencyPct / 100);
   const totalCosts = preContingencyTotal + contingencyAmount;
   const grossSurplus = totalRevenue - totalCosts;
-  // Prize money is a fixed cost line item - use actual amount for distribution calculations
-  const prizePoolAmount = costs.oneTime.find(c => c.id === 'prizes')?.amount ?? 45000;
-  const netAfterPrizes = grossSurplus;
+  const prizePoolAmount = (prizePool.enabled && grossSurplus > 0)
+    ? Math.min(grossSurplus * prizePool.pct / 100, grossSurplus)
+    : 0;
+  const netAfterPrizes = grossSurplus - prizePoolAmount;
   const mgmtFee = costs.oneTime.find(c => c.id === 'mgmtFee')?.amount ?? 50000;
   const rrcEarnings = mgmtFee + netAfterPrizes;
   return {
@@ -1073,7 +959,7 @@ function RevenueChart({ metrics, state }) {
   const chartRef = useRef(null);
   useEffect(() => {
     if (!window.Chart || !chartRef.current) return;
-    if (chartRef.current && chartRef.current._chartInstance) {
+    if (chartRef.current._chartInstance) {
       chartRef.current._chartInstance.destroy();
       chartRef.current._chartInstance = null;
     }
@@ -1117,7 +1003,7 @@ function CostsChart({ metrics, state }) {
   const chartRef = useRef(null);
   useEffect(() => {
     if (!window.Chart || !chartRef.current) return;
-    if (chartRef.current && chartRef.current._chartInstance) {
+    if (chartRef.current._chartInstance) {
       chartRef.current._chartInstance.destroy();
       chartRef.current._chartInstance = null;
     }
@@ -1901,20 +1787,6 @@ function App() {
   const [scheduleError, setScheduleError] = useState('');
   const [showAllSlots, setShowAllSlots] = useState(false);
 
-  // Doc generation
-  const [docGenLoading, setDocGenLoading] = useState('');
-
-  // Chatbot state
-  const [chatOpen, setChatOpen] = useState(false);
-  const [chatMessages, setChatMessages] = useState([
-    { role: 'assistant', content: 'Hi! Ask me anything about the RRC Doubles Cup.', model: 'claude' }
-  ]);
-  const [chatInput, setChatInput] = useState('');
-  const [chatLoading, setChatLoading] = useState(false);
-  const [chatTimeout, setChatTimeout] = useState(0);
-  const chatEndRef = useRef(null);
-  const clientId = useRef(Math.random().toString(36).slice(2));
-
   // Auth: check session on mount
   useEffect(() => {
     async function checkSession() {
@@ -1936,9 +1808,11 @@ function App() {
 
   async function resolveUserRole(user) {
     setAuthUser(user);
-    const { data: org } = await supabase.from('rrc_organizers').select('*').eq('user_id', user.id).single();
+    const { data: adminRow } = await supabase.from('admin_users').select('role').eq('email', user.email).maybeSingle();
+    if (adminRow) { setUserRole('organizer'); return; }
+    const { data: org } = await supabase.from('rrc_organizers').select('*').eq('user_id', user.id).maybeSingle();
     if (org) { setUserRole('organizer'); return; }
-    const { data: fo } = await supabase.from('rrc_franchise_owners').select('*').eq('user_id', user.id).single();
+    const { data: fo } = await supabase.from('rrc_franchise_owners').select('*').eq('user_id', user.id).maybeSingle();
     if (fo) { setFranchiseProfile(fo); setUserRole('franchise_owner'); return; }
     setUserRole('new_user');
   }
@@ -2009,24 +1883,6 @@ function App() {
         if (error) throw error;
         setCloudStatus('Saved to cloud');
         setTimeout(() => setCloudStatus(''), 3000);
-        // Fire-and-forget training update
-        fetch('/api/train', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tournamentData: {
-              eventName: state.eventName,
-              eventDays: state.eventDays,
-              totalPartners: state.brandPartners.length + state.communityPartners.length,
-              brandPartners: state.brandPartners.map(p => ({name: p.name, fee: p.fee, pairs: p.pairsPerPartner})),
-              communityPartners: state.communityPartners.map(p => ({name: p.name, fee: p.fee})),
-              prizes: { first: 25000, second: 15000, third: 5000 },
-              registrationFee: 5000,
-              totalRevenue: metrics.totalRevenue,
-              totalCosts: metrics.totalCosts,
-            }
-          }),
-        }).catch(() => {}); // silent fail
       } catch(e) {
         setCloudStatus('Saved locally (cloud error)');
         setTimeout(() => setCloudStatus(''), 4000);
@@ -2093,109 +1949,6 @@ function App() {
     };
     reader.readAsText(file);
     e.target.value = '';
-  };
-
-  // Chat role and context
-  const chatRole = userRole === 'organizer' ? 'organizer' : userRole === 'franchise_owner' ? 'franchise_owner' : 'public';
-  const chatContext = userRole === 'organizer' ? {
-    eventName: state.eventName,
-    eventDays: state.eventDays,
-    totalRevenue: metrics.totalRevenue,
-    totalCosts: metrics.totalCosts,
-    rrcEarnings: metrics.rrcEarnings,
-    totalPartners: state.brandPartners.length + state.communityPartners.length,
-    totalPlayers: metrics.totalPlayers,
-  } : userRole === 'franchise_owner' ? {
-    eventName: state.eventName,
-    franchiseName: franchiseProfile?.franchise_label,
-    partnerType: franchiseProfile?.partner_type,
-    prizes: { first: 25000, second: 15000, third: 5000 },
-  } : {
-    eventName: state.eventName,
-    format: 'Doubles badminton, group stage + knockout',
-    prizes: { first: 25000, second: 15000, third: 5000 },
-    registrationFee: 5000,
-  };
-
-  const sendChatMessage = async () => {
-    if (!chatInput.trim() || chatLoading || chatTimeout > 0) return;
-    const userMsg = chatInput.trim();
-    setChatInput('');
-    setChatMessages(prev => [...prev, { role: 'user', content: userMsg }]);
-    setChatLoading(true);
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: userMsg,
-          role: chatRole,
-          context: chatContext,
-          clientId: clientId.current,
-        }),
-      });
-      const data = await res.json();
-      if (res.status === 429) {
-        const secs = data.timeoutSeconds || 30;
-        setChatTimeout(secs);
-        const interval = setInterval(() => {
-          setChatTimeout(prev => { if (prev <= 1) { clearInterval(interval); return 0; } return prev - 1; });
-        }, 1000);
-        setChatMessages(prev => [...prev, { role: 'assistant', content: data.message, isTimeout: true }]);
-      } else if (data.error) {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.error}` }]);
-      } else {
-        setChatMessages(prev => [...prev, { role: 'assistant', content: data.message, model: data.model }]);
-      }
-    } catch(e) {
-      setChatMessages(prev => [...prev, { role: 'assistant', content: 'Connection error. Try again.' }]);
-    }
-    setChatLoading(false);
-    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 100);
-  };
-
-  // AI document generation
-  const downloadAIDoc = async (docType) => {
-    setDocGenLoading(docType);
-    try {
-      const eventData = {
-        eventName: state.eventName,
-        eventDays: state.eventDays,
-        totalPartners: state.brandPartners.length + state.communityPartners.length,
-        brandCount: state.brandPartners.length,
-        communityCount: state.communityPartners.length,
-        totalPlayers: metrics.totalPlayers,
-        brandPairs: metrics.totalBrandPairs,
-        brandRevenue: formatINR(metrics.brandPartnerRevenue),
-        communityRevenue: formatINR(metrics.communityPartnerRevenue),
-        playerFeeRevenue: formatINR(metrics.playerFeeRevenue),
-        registrationRevenue: formatINR((state.brandPartners.length + state.communityPartners.length) * 5000),
-        vendorRevenue: formatINR(metrics.vendorRevenue),
-        sundownerRevenue: formatINR(metrics.sundDownerRevenue),
-        totalRevenue: formatINR(metrics.totalRevenue),
-        totalCosts: formatINR(metrics.totalCosts),
-        grossSurplus: formatINR(metrics.grossSurplus),
-        rrcEarnings: formatINR(metrics.rrcEarnings),
-        targetEarnings: formatINR(state.targetEarnings),
-        costsBreakdown: state.costs.oneTime.map(c => `- ${c.label}: ${formatINR(c.amount)}`).join('\n')
-          + '\n' + state.costs.perDay.map(c => `- ${c.label} (x${state.eventDays} days): ${formatINR(c.amount * state.eventDays)}`).join('\n'),
-      };
-      const res = await fetch('/api/generate-doc', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ docType, eventData }),
-      });
-      const data = await res.json();
-      if (data.error) throw new Error(data.error);
-      const blob = new Blob([data.html], { type: 'text/html' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `${state.eventName.replace(/\s+/g, '-')}-${docType}-${new Date().toISOString().slice(0,10)}.html`;
-      a.click();
-    } catch(e) {
-      alert(`Document generation failed: ${e.message}`);
-    }
-    setDocGenLoading('');
   };
 
   // State helpers
@@ -2404,8 +2157,8 @@ Return a JSON object with this exact structure:
         </span>
         {authUser && (
           <div style={{display:'flex', alignItems:'center', gap:8}}>
-            <span style={{fontSize:12, color:'rgba(255,255,255,0.8)', maxWidth:80, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>Organizer</span>
-            <button onClick={()=>supabase.auth.signOut()} style={{height:28, padding:'0 10px', border:'1px solid rgba(255,255,255,0.35)', borderRadius:6, background:'rgba(255,255,255,0.12)', fontSize:12, cursor:'pointer', color:'#fff'}}>Sign Out</button>
+            <span style={{fontSize:12, color:'var(--text-secondary)', maxWidth:80, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}}>Organizer</span>
+            <button onClick={()=>supabase.auth.signOut()} style={{height:28, padding:'0 10px', border:'1px solid var(--border)', borderRadius:6, background:'transparent', fontSize:12, cursor:'pointer', color:'var(--text-secondary)'}}>Sign Out</button>
           </div>
         )}
       </div>
@@ -2780,31 +2533,31 @@ Return a JSON object with this exact structure:
 
           {/* 6 Metric Cards */}
           <div className="metric-grid">
-            <div className="metric-card blue-card">
+            <div className="metric-card">
               <div className="metric-label">Total Revenue</div>
-              <div className="metric-value">{formatINR(metrics.totalRevenue)}</div>
+              <div className="metric-value blue">{formatINR(metrics.totalRevenue)}</div>
             </div>
-            <div className="metric-card" style={{borderLeft:'4px solid var(--red-mid)'}}>
+            <div className="metric-card">
               <div className="metric-label">Total Costs</div>
               <div className="metric-value red">{formatINR(metrics.totalCosts)}</div>
             </div>
-            <div className={`metric-card ${metrics.grossSurplus >= 0 ? 'green-card' : ''}`} style={metrics.grossSurplus < 0 ? {borderLeft:'4px solid var(--red-mid)'} : {}}>
+            <div className="metric-card">
               <div className="metric-label">Gross Surplus</div>
-              <div className="metric-value">{formatINR(metrics.grossSurplus)}</div>
+              <div className={`metric-value ${metrics.grossSurplus >= 0 ? 'green' : 'red'}`}>{formatINR(metrics.grossSurplus)}</div>
             </div>
-            <div className="metric-card amber-card">
+            <div className="metric-card">
               <div className="metric-label">Prize Money</div>
-              <div className="metric-value">Rs 45,000</div>
-              <div style={{fontSize:11, color:'rgba(255,255,255,0.7)'}}>Fixed (1st+2nd+3rd)</div>
+              <div className="metric-value amber">Rs 45,000</div>
+              <div style={{fontSize:11, color:'var(--text-muted)'}}>Fixed (1st+2nd+3rd)</div>
             </div>
-            <div className="metric-card" style={{borderLeft:'4px solid var(--green-mid)'}}>
+            <div className="metric-card">
               <div className="metric-label">Reg. Fee Revenue</div>
               <div className="metric-value green">{formatINR(metrics.registrationFeeRevenue)}</div>
               <div style={{fontSize:11, color:'var(--text-muted)'}}>{state.brandPartners.length + state.communityPartners.length} franchises</div>
             </div>
-            <div className="metric-card" style={{borderLeft:'4px solid var(--brand1)'}}>
+            <div className="metric-card">
               <div className="metric-label">Total Partners</div>
-              <div className="metric-value" style={{color:'var(--brand1)'}}>{state.brandPartners.length + state.communityPartners.length}</div>
+              <div className="metric-value amber">{state.brandPartners.length + state.communityPartners.length}</div>
               <div style={{fontSize:11, color:'var(--text-muted)'}}>{state.brandPartners.length} brand + {state.communityPartners.length} community</div>
             </div>
           </div>
@@ -2985,7 +2738,7 @@ Return a JSON object with this exact structure:
 
           {/* P&L Summary */}
           <div className="card" style={{marginTop:12}}>
-            <div className="chart-title">P&L Summary</div>
+            <div className="chart-title">P&amp;L Summary</div>
             {[
               ['Total Revenue', formatINR(metrics.totalRevenue), false],
               ['Total Costs', `(${formatINR(metrics.totalCosts)})`, false],
@@ -3006,23 +2759,13 @@ Return a JSON object with this exact structure:
 
           {/* Download Buttons */}
           <div style={{marginTop:16}}>
-            <div className="section-label">Export Reports (AI)</div>
-            <div className="dl-btn-row">
-              <button className="dl-btn blue" onClick={() => downloadAIDoc('partner_pitch')} disabled={docGenLoading==='partner_pitch'}>
-                {docGenLoading==='partner_pitch' ? 'Generating...' : 'Partner Pitch (AI)'}
-              </button>
-              <button className="dl-btn green" onClick={() => downloadAIDoc('event_pl')} disabled={docGenLoading==='event_pl'}>
-                {docGenLoading==='event_pl' ? 'Generating...' : 'Event P&L (AI)'}
-              </button>
-            </div>
-            <div style={{fontSize:11, color:'var(--text-muted)', marginBottom:8}}>Powered by Claude - generates print-ready HTML documents</div>
-            <div className="section-label">Export Reports (Excel fallback)</div>
+            <div className="section-label">Export Reports</div>
             <div className="dl-btn-row">
               <button className="dl-btn blue" onClick={() => buildPartnerPitchPack(state, metrics)}>
                 Partner Pitch Pack (.xlsx)
               </button>
               <button className="dl-btn green" onClick={() => buildEventPL(state, metrics)}>
-                Full Event P&L (.xlsx)
+                Full Event P&amp;L (.xlsx)
               </button>
             </div>
             <div className="section-label">Configuration</div>
@@ -3368,50 +3111,6 @@ Return a JSON object with this exact structure:
             </div>
           )}
 
-        </div>
-      </div>
-
-      {/* CHATBOT */}
-      <button className="chat-fab" onClick={() => setChatOpen(o => !o)}>
-        {chatOpen ? '✕' : '🤖'}
-      </button>
-      <div className={`chat-panel ${chatOpen ? 'open' : ''}`}>
-        <div className="chat-header">
-          <span style={{fontSize:20}}>🏸</span>
-          <span className="chat-header-title">RRC Assistant</span>
-          <span className={`chat-header-role ${chatRole}`}>
-            {chatRole === 'organizer' ? 'Organizer' : chatRole === 'franchise_owner' ? 'Franchise' : 'Public'}
-          </span>
-          <button onClick={() => setChatOpen(false)} style={{border:'none', background:'transparent', fontSize:18, cursor:'pointer', color:'var(--text-muted)', padding:4}}>✕</button>
-        </div>
-        {chatTimeout > 0 && (
-          <div style={{background:'var(--amber-bg)', padding:'6px 16px', fontSize:12, color:'var(--amber)', fontWeight:600}}>
-            Please wait {chatTimeout}s before asking another question
-          </div>
-        )}
-        <div className="chat-messages">
-          {chatMessages.map((m, i) => (
-            <div key={i} className={`chat-msg ${m.role} ${m.isTimeout ? 'timeout' : ''}`}>
-              {m.content}
-              {m.model && <div className="chat-model-badge">via {m.model === 'claude' ? 'Claude' : 'GPT-4o'}</div>}
-            </div>
-          ))}
-          {chatLoading && (
-            <div className="chat-msg assistant" style={{color:'var(--text-muted)'}}>Thinking...</div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
-        <div className="chat-input-row">
-          <input
-            type="text" value={chatInput}
-            onChange={e => setChatInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendChatMessage()}
-            placeholder={chatTimeout > 0 ? `Wait ${chatTimeout}s...` : 'Ask about the tournament...'}
-            disabled={chatLoading || chatTimeout > 0}
-          />
-          <button className="chat-send-btn" onClick={sendChatMessage} disabled={chatLoading || chatTimeout > 0 || !chatInput.trim()}>
-            &#x27A4;
-          </button>
         </div>
       </div>
 
