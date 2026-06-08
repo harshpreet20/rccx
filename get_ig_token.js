@@ -56,10 +56,14 @@ async function getInstagramToken() {
     });
 
     console.log('\n=== Instagram Session Tokens ===');
-    if (sessionid) console.log(`sessionid:   ${sessionid.value}`);
-    if (csrftoken)  console.log(`csrftoken:   ${csrftoken.value}`);
+    if (sessionid) console.log(`sessionid:   [REDACTED - ${sessionid.value.length} chars]`);
+    if (csrftoken)  console.log(`csrftoken:   [REDACTED - ${csrftoken.value.length} chars]`);
     if (ds_user_id) console.log(`ds_user_id:  ${ds_user_id.value}`);
-    if (accessToken) console.log(`\nExtra data from page:\n${accessToken}`);
+    // Write tokens to a local file instead of printing to stdout/logs
+    const fs = require('fs');
+    const out = { sessionid: sessionid?.value, csrftoken: csrftoken?.value, ds_user_id: ds_user_id?.value };
+    fs.writeFileSync('/tmp/ig_tokens.json', JSON.stringify(out, null, 2), { mode: 0o600 });
+    console.log('\nTokens written to /tmp/ig_tokens.json (mode 600, not printed to stdout)');
 
     if (!sessionid) {
       console.log('\nLogin may have failed or 2FA is required. Current URL:', page.url());

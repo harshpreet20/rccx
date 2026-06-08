@@ -12,11 +12,27 @@ const SYSTEM_PROMPTS = {
 const rateLimits = new Map();
 const TIMEOUT_DURATION = 30000; // 30 seconds
 
+import { requireAuth } from './_auth.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { message, role, context, clientId } = req.body;
+  const { message, context, clientId } = req.body;
   if (!message) return res.status(400).json({ error: 'No message provided' });
+
+  // Verify auth and resolve role server-side (ignore client-supplied role)
+  let verifiedRole = 'public';
+  try {
+    const { role } = await requireAuth(req);
+    verifiedRole = role === 'organizer' ? 'organizer'
+      : role === 'franchise_owner' ? 'franchise_owner'
+      : 'public';
+  } catch (authErr) {
+    // Unauthenticated users get public-level access
+    if (authErr.status === 500) return res.status(500).json({ error: 'Server error' });
+    verifiedRole = 'public';
+  }
+  const role = verifiedRole;
 
   // Rate limiting for public users
   if (role === 'public') {

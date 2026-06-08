@@ -1,5 +1,15 @@
+import { requireAuth } from './_auth.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
+
+  try {
+    const { role } = await requireAuth(req);
+    if (role !== 'organizer') return res.status(403).json({ error: 'Organizer access required' });
+  } catch (authErr) {
+    return res.status(authErr.status || 401).json({ error: authErr.message });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'Anthropic API key not configured' });
 
