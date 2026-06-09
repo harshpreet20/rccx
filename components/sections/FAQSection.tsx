@@ -46,8 +46,8 @@ const FAQS = [
     a: "Community Partners are clubs, academies, or organisations that partner with RCC to bring their members into our events. Partner members play under their club's banner, wear community jerseys, and compete in our tournaments — creating a rich, multi-community competitive environment.",
   },
   {
-    q: 'Do you organise tournaments?',
-    a: 'Yes. RCC runs the full spectrum — from internal Ladder Leagues and Smash Nights to multi-community tournaments with brand sponsorships, prize pools, and sundowner evenings. Events span 1–3 days and are held at our West Delhi venues.',
+    q: 'Do you organise tournaments, and are there giveaways?',
+    a: "Yes on both. RCC runs the full spectrum — Ladder Leagues, Smash Nights, multi-community tournaments with brand sponsorships, prize pools, and sundowner evenings. Almost every event includes giveaways: equipment drops, RCC merchandise, or free event entries. We reward participation, improvement, and community spirit — not just podium finishes.",
   },
   {
     q: 'Is there a membership fee?',
