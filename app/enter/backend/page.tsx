@@ -100,6 +100,19 @@ type Sponsor = {
   display_order?: number;
 };
 
+type PartnershipInquiry = {
+  id: string;
+  company_name: string;
+  contact_name: string;
+  email: string;
+  phone?: string;
+  partnership_type?: string;
+  message?: string;
+  status: string;
+  notes?: string;
+  created_at: string;
+};
+
 type BlogPost = {
   id: string;
   title: string;
@@ -2278,6 +2291,7 @@ function SpotlightsModule() {
 // ─── TAB 9: PARTNERS ─────────────────────────────────────────────────────────
 
 function PartnersModule() {
+  const [subTab, setSubTab] = useState<'sponsors' | 'inquiries'>('sponsors');
   const [sponsors, setSponsors] = useState<Sponsor[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -2285,6 +2299,12 @@ function PartnersModule() {
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Inquiries state
+  const [inquiries, setInquiries] = useState<PartnershipInquiry[]>([]);
+  const [inquiriesLoading, setInquiriesLoading] = useState(false);
+  const [selectedInquiry, setSelectedInquiry] = useState<PartnershipInquiry | null>(null);
+  const [updatingInquiry, setUpdatingInquiry] = useState(false);
 
   const showToast = (msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
@@ -2299,7 +2319,23 @@ function PartnersModule() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchSponsors(); }, [fetchSponsors]);
+  const fetchInquiries = useCallback(async () => {
+    setInquiriesLoading(true);
+    const { data, error } = await supabase.from('partnership_inquiries').select('*').order('created_at', { ascending: false });
+    if (error) showToast(error.message, 'error');
+    else setInquiries((data ?? []) as PartnershipInquiry[]);
+    setInquiriesLoading(false);
+  }, []);
+
+  useEffect(() => { fetchSponsors(); fetchInquiries(); }, [fetchSponsors, fetchInquiries]);
+
+  async function updateInquiryStatus(id: string, status: string, notes: string) {
+    setUpdatingInquiry(true);
+    const { error } = await supabase.from('partnership_inquiries').update({ status, notes }).eq('id', id);
+    if (error) showToast(error.message, 'error');
+    else { showToast('Updated!', 'success'); setSelectedInquiry(null); fetchInquiries(); }
+    setUpdatingInquiry(false);
+  }
 
   async function handleLogoUpload(file: File) {
     setUploading(true);
@@ -2350,14 +2386,79 @@ function PartnersModule() {
     else { showToast(active ? 'Deactivated' : 'Activated!', 'success'); fetchSponsors(); }
   };
 
+  const statusColors: Record<string, string> = {
+    new: '#D4AF37', reviewing: '#60a5fa', accepted: '#22c55e', rejected: '#C21818', default: '#888899',
+  };
+
   return (
     <div>
-      <SectionHeading
-        title="PARTNERS"
-        count={sponsors.length}
-        action={<button style={primaryBtn} onClick={() => setShowForm(v => !v)}>{showForm ? 'Cancel' : '+ Add Partner'}</button>}
-      />
+      <SectionHeading title="PARTNERS" count={sponsors.length} />
       {toast && <Toast msg={toast.msg} type={toast.type} />}
+
+      {/* Sub-tab switcher */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
+        {(['sponsors', 'inquiries'] as const).map(t => (
+          <button key={t} onClick={() => setSubTab(t)} style={{
+            padding: '7px 16px', borderRadius: 8, border: '1px solid',
+            borderColor: subTab === t ? 'rgba(194,24,24,0.4)' : 'rgba(255,255,255,0.08)',
+            background: subTab === t ? 'rgba(194,24,24,0.12)' : 'transparent',
+            color: subTab === t ? '#C21818' : 'rgba(255,255,255,0.4)',
+            fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, letterSpacing: '0.1em',
+            textTransform: 'uppercase', cursor: 'pointer',
+          }}>
+            {t === 'sponsors' ? `Sponsors (${sponsors.length})` : `Inquiries (${inquiries.length})`}
+          </button>
+        ))}
+      </div>
+
+      {subTab === 'inquiries' && (
+        <div>
+          {selectedInquiry ? (
+            <InquiryDetail
+              inquiry={selectedInquiry}
+              updating={updatingInquiry}
+              onClose={() => setSelectedInquiry(null)}
+              onSave={(status, notes) => updateInquiryStatus(selectedInquiry.id, status, notes)}
+            />
+          ) : (
+            <div style={{ ...glassCard, padding: 0, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr>{['Company', 'Contact', 'Email', 'Type', 'Status', 'Date', 'Actions'].map(h => <th key={h} style={thStyle}>{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {inquiriesLoading && <LoadingRow cols={7} />}
+                  {!inquiriesLoading && inquiries.length === 0 && <EmptyRow cols={7} msg="No inquiries yet." />}
+                  {inquiries.map(inq => (
+                    <tr key={inq.id}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <td style={{ ...tdStyle, fontWeight: 600 }}>{inq.company_name}</td>
+                      <td style={tdStyle}>{inq.contact_name}</td>
+                      <td style={{ ...tdStyle, color: '#D4AF37' }}><a href={`mailto:${inq.email}`} style={{ color: '#D4AF37' }}>{inq.email}</a></td>
+                      <td style={{ ...tdStyle, color: '#888899' }}>{inq.partnership_type ?? '—'}</td>
+                      <td style={tdStyle}>
+                        <span style={{ color: statusColors[inq.status] ?? statusColors.default, fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, textTransform: 'uppercase' }}>
+                          {inq.status}
+                        </span>
+                      </td>
+                      <td style={{ ...tdStyle, color: '#888899' }}>{new Date(inq.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                      <td style={tdStyle}>
+                        <button style={primaryBtn} onClick={() => setSelectedInquiry(inq)}>Review</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {subTab === 'sponsors' && <>
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <button style={primaryBtn} onClick={() => setShowForm(v => !v)}>{showForm ? 'Cancel' : '+ Add Partner'}</button>
+        </div>
 
       {showForm && (
         <FormSection title="NEW PARTNER">
@@ -2475,6 +2576,69 @@ function PartnersModule() {
             ))}
           </tbody>
         </table>
+      </div>
+      </>}
+    </div>
+  );
+}
+
+function InquiryDetail({ inquiry, updating, onClose, onSave }: {
+  inquiry: PartnershipInquiry;
+  updating: boolean;
+  onClose: () => void;
+  onSave: (status: string, notes: string) => void;
+}) {
+  const [status, setStatus] = useState(inquiry.status);
+  const [notes, setNotes] = useState(inquiry.notes ?? '');
+  return (
+    <div style={{ ...glassCard }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h3 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 15, color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+          {inquiry.company_name}
+        </h3>
+        <button onClick={onClose} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', fontSize: 18 }}>✕</button>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16 }}>
+        {[
+          { label: 'Contact', value: inquiry.contact_name },
+          { label: 'Email', value: inquiry.email },
+          { label: 'Phone', value: inquiry.phone ?? '—' },
+          { label: 'Type', value: inquiry.partnership_type ?? '—' },
+          { label: 'Submitted', value: new Date(inquiry.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) },
+        ].map(({ label, value }) => (
+          <div key={label}>
+            <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>{label}</div>
+            <div style={{ color: '#e8e8ec', fontSize: 13 }}>{value}</div>
+          </div>
+        ))}
+      </div>
+      {inquiry.message && (
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>Message</div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8, padding: '12px 14px', color: '#e8e8ec', fontSize: 13, lineHeight: 1.6 }}>
+            {inquiry.message}
+          </div>
+        </div>
+      )}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 12 }}>
+        <div>
+          <label style={labelStyle}>Status</label>
+          <select value={status} onChange={e => setStatus(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+            {['new', 'reviewing', 'accepted', 'rejected'].map(s => <option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Internal Notes</label>
+          <input type="text" value={notes} onChange={e => setNotes(e.target.value)} placeholder="Add notes…" style={inputStyle} />
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+        <button style={primaryBtn} disabled={updating} onClick={() => onSave(status, notes)}>
+          {updating ? 'Saving…' : 'Save Changes'}
+        </button>
+        <button style={{ ...primaryBtn, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }} onClick={onClose}>
+          Cancel
+        </button>
       </div>
     </div>
   );
