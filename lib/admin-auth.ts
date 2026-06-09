@@ -10,22 +10,11 @@ export type AdminAuthState = {
   loading: boolean;
 };
 
-async function resolveIsOrganizer(user: User): Promise<boolean> {
-  // Check admin_users table first (email-based, covers super_admin + admin roles)
-  const { data: adminRow } = await supabase
-    .from('admin_users')
-    .select('role')
-    .eq('email', user.email)
-    .maybeSingle();
-  if (adminRow?.role) return true;
-
-  // Fall back to rcc_organizers (user_id-based)
-  const { data: organizer } = await supabase
-    .from('rcc_organizers')
-    .select('user_id')
-    .eq('user_id', user.id)
-    .maybeSingle();
-  return !!organizer;
+async function resolveIsOrganizer(_user: User): Promise<boolean> {
+  // Use SECURITY DEFINER RPC — bypasses GRANT issues on admin_users
+  const { data, error } = await supabase.rpc('check_is_admin');
+  if (error) throw error;
+  return data === true;
 }
 
 export function useAdminAuth(): AdminAuthState {
