@@ -9,7 +9,6 @@ import CommunityFeed from '@/components/sections/CommunityFeed';
 import TestimonialsSection from '@/components/sections/TestimonialsSection';
 import Footer from '@/components/layout/Footer';
 import ChatBot from '@/components/ui/ChatBot';
-import SupportModal from '@/components/ui/SupportModal';
 
 export default function Home() {
   return (
@@ -25,7 +24,6 @@ export default function Home() {
       <TestimonialsSection />
       <Footer />
       <ChatBot />
-      <SupportModal />
     </main>
   );
 }
