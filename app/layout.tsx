@@ -31,14 +31,26 @@ const dancingScript = Dancing_Script({
 });
 
 export const metadata: Metadata = {
-  title: "Racquets Club Community | Delhi's Invite-Only Badminton Community",
+  title: "Racquets Club Community | Badminton Community in West Delhi – Paschim Vihar & Janakpuri",
   description:
-    "RCC is Delhi's invite-only badminton community for serious players. Regular games, skill-based matches, tournaments, and real connections.",
-  keywords: 'badminton, Delhi, invite-only, community, RCC, Racquets Club, tournaments, sports',
+    "RCC is West Delhi's invite-only badminton community. We play at JLDAV School Paschim Vihar & DTEA Janakpuri. Tournaments, ladder leagues, and real competitive badminton.",
+  keywords: 'badminton West Delhi, badminton Paschim Vihar, badminton Janakpuri, RCC, Racquets Club Community, invite-only badminton Delhi, badminton club Delhi, JLDAV Paschim Vihar badminton, DTEA Janakpuri badminton, Delhi badminton community',
   openGraph: {
-    title: 'Racquets Club Community (RCC)',
-    description: "Delhi's invite-only badminton community. Smash. Connect. Compete.",
+    title: 'Racquets Club Community (RCC) – West Delhi Badminton',
+    description: "West Delhi's invite-only badminton community. Paschim Vihar & Janakpuri. Smash. Connect. Compete.",
     type: 'website',
+    siteName: 'Racquets Club Community',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Racquets Club Community – West Delhi Badminton',
+    description: "West Delhi's elite invite-only badminton community. JLDAV Paschim Vihar & DTEA Janakpuri.",
+  },
+  other: {
+    'geo.region': 'IN-DL',
+    'geo.placename': 'Paschim Vihar, West Delhi',
+    'geo.position': '28.6741;77.0886',
+    'ICBM': '28.6741, 77.0886',
   },
 };
 

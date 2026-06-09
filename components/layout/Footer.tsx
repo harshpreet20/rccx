@@ -229,7 +229,7 @@ export default function Footer() {
               marginBottom: '24px',
             }}
           >
-            Delhi's elite invite-only badminton community. Where passion meets competition.
+            West Delhi's invite-only badminton community — Paschim Vihar & Janakpuri. Where passion meets competition.
           </p>
           <div style={{ display: 'flex', gap: '12px' }}>
             <a href="https://www.instagram.com/racquetsclubcommunity/" target="_blank" rel="noopener noreferrer" className="footer-social-icon" aria-label="Instagram">
@@ -366,6 +366,29 @@ export default function Footer() {
               +91 98765 43210
             </a>
           </div>
+        </div>
+      </div>
+
+      {/* Venues strip */}
+      <div style={{ padding: '0 clamp(16px, 5vw, 120px) 28px' }}>
+        <div style={{ background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.1)', borderRadius: 10, padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'center' }}>
+          <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 10, letterSpacing: '0.16em', color: '#D4AF37', textTransform: 'uppercase' }}>
+            Primary Venues
+          </span>
+          {[
+            { name: 'JLDAV School', area: 'Paschim Vihar, West Delhi', note: 'Current preferred — better air management' },
+            { name: 'DTEA Senior Secondary School', area: 'Janakpuri, West Delhi' },
+          ].map(v => (
+            <div key={v.name} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#D4AF37', flexShrink: 0 }} />
+              <div>
+                <span style={{ fontFamily: 'var(--font-inter)', fontSize: 13, color: '#e8e8ec', fontWeight: 600 }}>{v.name}</span>
+                <span style={{ fontFamily: 'var(--font-inter)', fontSize: 12, color: '#888899', marginLeft: 6 }}>{v.area}</span>
+                {v.note && <span style={{ fontFamily: 'var(--font-inter)', fontSize: 11, color: 'rgba(212,175,55,0.6)', marginLeft: 6 }}>· {v.note}</span>}
+              </div>
+            </div>
+          ))}
+          <span style={{ fontFamily: 'var(--font-inter)', fontSize: 11, color: '#888899', marginLeft: 'auto' }}>We also play across other courts in West Delhi</span>
         </div>
       </div>
 

@@ -426,11 +426,11 @@ export default function Hero() {
             textTransform: 'uppercase',
           }}
         >
-          A COMMUNITY UNITED BY{' '}
-          <span style={{ color: '#D4AF37', fontWeight: 700 }}>PASSION</span>
-          {', DRIVEN BY '}
-          <span style={{ color: '#D4AF37', fontWeight: 700 }}>COMPETITION</span>
-          {'.'}
+          West Delhi's invite-only badminton community.{' '}
+          <span style={{ color: '#D4AF37', fontWeight: 700 }}>Paschim Vihar</span>
+          {' & '}
+          <span style={{ color: '#D4AF37', fontWeight: 700 }}>Janakpuri</span>
+          {'. United by passion. Driven by competition.'}
         </p>
 
         {/* Buttons */}
