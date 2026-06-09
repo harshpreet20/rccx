@@ -25,7 +25,6 @@ const NAV_LINKS = [
   { label: 'EVENTS', href: '/events' },
   { label: 'MEMBERSHIP', href: '/membership' },
   { label: 'CONTACT', href: '/contact' },
-  { label: 'ADMIN', href: '/admin' },
 ];
 
 /* ─── Navbar ─────────────────────────────────────────────────────── */

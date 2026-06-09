@@ -48,7 +48,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       className={`${montserrat.variable} ${inter.variable} ${bebasNeue.variable} ${dancingScript.variable}`}
     >
       <head>
-        <link rel="preload" href="/athlete.png" as="image" />
       </head>
       <body className="antialiased bg-[#0a0a0f] text-[#e8e8ec] overflow-x-hidden">
         {children}
