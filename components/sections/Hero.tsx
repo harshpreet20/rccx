@@ -202,23 +202,23 @@ function RacquetIcon({ size = 20, color = '#D4AF37' }: { size?: number; color?: 
 const FEATURES = [
   {
     icon: <Flame size={20} color="#D4AF37" opacity={0.75} />,
-    title: 'PASSION FUELS US',
-    desc: 'For the love of the game.',
+    title: ‘WEST DELHI’,
+    desc: ‘Paschim Vihar · Janakpuri · and more.’,
   },
   {
     icon: <RacquetIcon size={20} color="#D4AF37" />,
-    title: 'PLAY TOGETHER',
-    desc: 'Stronger as a community.',
+    title: ‘COMMUNITY FIRST’,
+    desc: ‘WhatsApp polls decide every session.’,
   },
   {
     icon: <Trophy size={20} color="#D4AF37" opacity={0.75} />,
-    title: 'COMPETE FEARLESSLY',
-    desc: 'Challenge yourself. Elevate together.',
+    title: ‘COMPETE TO WIN’,
+    desc: ‘Ladder leagues, tournaments & prize pools.’,
   },
   {
     icon: <Users size={20} color="#D4AF37" opacity={0.75} />,
-    title: 'BELONG FOREVER',
-    desc: "More than a club. It’s a family.",
+    title: ‘AI MATCHMAKING’,
+    desc: ‘Smart scheduling by availability — coming soon.’,
   },
 ];
 

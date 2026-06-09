@@ -82,8 +82,8 @@ export default function MembershipSection() {
           }}>
             JOIN <span className="text-gradient-gold">RCC</span> TODAY
           </h2>
-          <p style={{ fontFamily: 'var(--font-inter)', fontSize: '15px', color: '#888899', maxWidth: '420px', margin: '0 auto' }}>
-            Apply for membership. Delhi&apos;s most elite invite-only badminton community.
+          <p style={{ fontFamily: 'var(--font-inter)', fontSize: '15px', color: '#888899', maxWidth: '460px', margin: '0 auto', lineHeight: 1.7 }}>
+            Apply for membership. Once approved, you get added to our WhatsApp community, invited to sessions, and seeded into our leaderboard. West Delhi&apos;s most competitive badminton circle.
           </p>
         </motion.div>
 

@@ -38,8 +38,8 @@ const FALLBACK: Announcement[] = [
   },
   {
     id: '4', pinned: false, category: 'announcement', author: 'RCC Admin',
-    title: '📍 New Venue: Thyagraj Sports Complex',
-    body: 'Weekend Open 2026 will be hosted at Thyagraj for the first time. World-class courts, ample parking, full cafeteria.',
+    title: '📍 This Week: JLDAV School, Paschim Vihar',
+    body: 'Community poll is in — majority voted for JLDAV this Saturday. Exhaust fans running, courts cleared. See you at 7 AM.',
     image_url: 'https://images.unsplash.com/photo-1544717684-1e5e0a8cf519?w=700&q=80',
     created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
   },

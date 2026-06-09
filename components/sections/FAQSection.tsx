@@ -38,8 +38,8 @@ const FAQS = [
     a: 'We welcome Beginner, Intermediate, Advanced, and Elite players. Matches are skill-matched so you always play with people at your level. We believe every player improves fastest when challenged appropriately.',
   },
   {
-    q: 'How often do you play?',
-    a: 'Most members play 3–4 times per week. We run structured sessions on weekdays and open court weekends. During peak seasons (Oct–Feb), we host tournaments, ladder leagues, and special events like our Sundowner series.',
+    q: 'How often do you play, and how are sessions scheduled?',
+    a: "Most members play 3–4 times per week. Right now, sessions are scheduled via polls in our WhatsApp community group — we drop a poll, members vote on date and venue, and we confirm within hours. We're building AI-powered matchmaking that will schedule you into games automatically based on your availability, skill level, and partner preferences — no more polls, just a notification saying your game is confirmed.",
   },
   {
     q: 'What is a Community Partner?',
