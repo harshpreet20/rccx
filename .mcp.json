@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "coderabbit": {
+      "command": "npx",
+      "args": ["-y", "@coderabbitai/mcp"],
+      "env": {
+        "CODERABBIT_API_KEY": "cr-YOUR_API_KEY_HERE"
+      }
+    }
+  }
+}
