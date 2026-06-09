@@ -43,7 +43,7 @@ const FAQS = [
   },
   {
     q: 'What is a Community Partner?',
-    a: 'Community Partners are clubs, academies, or organisations that partner with RCC to bring their members into our events. Partner members play under their club's banner, wear community jerseys, and compete in our tournaments — creating a rich, multi-community competitive environment.',
+    a: "Community Partners are clubs, academies, or organisations that partner with RCC to bring their members into our events. Partner members play under their club's banner, wear community jerseys, and compete in our tournaments — creating a rich, multi-community competitive environment.",
   },
   {
     q: 'Do you organise tournaments?',
@@ -55,7 +55,7 @@ const FAQS = [
   },
   {
     q: 'How do I register for an event?',
-    a: 'Event registrations open on the website under the Events section. Once an event is published, you'll find a registration button. Registered players receive a confirmation email with their ticket ID. Walk-ins are not accepted for tournaments.',
+    a: "Event registrations open on the website under the Events section. Once an event is published, you'll find a registration button. Registered players receive a confirmation email with their ticket ID. Walk-ins are not accepted for tournaments.",
   },
 ];
 
