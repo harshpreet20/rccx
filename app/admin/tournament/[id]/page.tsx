@@ -16,6 +16,12 @@ interface Partner {
   confirmedPlayers: number;
 }
 
+interface BrandPartner {
+  id: string;
+  name: string;
+  fee: number;
+}
+
 interface OneTimeCost {
   id: string;
   label: string;
@@ -33,7 +39,7 @@ interface TournamentState {
   eventName: string;
   eventDays: number;
   targetEarnings: number;
-  brandPartners: Partner[];
+  brandPartners: BrandPartner[];
   communityPartners: Partner[];
   playerFee: number;
   sponsorship: {
@@ -45,9 +51,11 @@ interface TournamentState {
     enabled: boolean;
     generalTicketPrice: number;
     generalAttendees: number;
+    generalConversionPct: number;
     vipEnabled: boolean;
     vipTicketPrice: number;
     vipAttendees: number;
+    vipConversionPct: number;
   };
   costs: {
     oneTime: OneTimeCost[];
@@ -66,7 +74,7 @@ const defaultState: TournamentState = {
   eventName: 'New Tournament',
   eventDays: 2,
   targetEarnings: 150000,
-  brandPartners: [{ id: '1', name: 'Brand Partner 1', fee: 150000, pairsPerPartner: 3, confirmedPlayers: 6 }],
+  brandPartners: [{ id: '1', name: 'Brand Partner 1', fee: 150000 }],
   communityPartners: [{ id: '2', name: 'Community Partner 1', fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 }],
   playerFee: 1000,
   sponsorship: {
@@ -74,7 +82,7 @@ const defaultState: TournamentState = {
     barterShuttle: { enabled: false, name: '', value: 0 },
   },
   vendorStalls: { count: 0, feePerStall: 5000 },
-  sundowner: { enabled: false, generalTicketPrice: 500, generalAttendees: 50, vipEnabled: false, vipTicketPrice: 1500, vipAttendees: 10 },
+  sundowner: { enabled: false, generalTicketPrice: 500, generalAttendees: 50, generalConversionPct: 75, vipEnabled: false, vipTicketPrice: 1500, vipAttendees: 10, vipConversionPct: 90 },
   costs: {
     oneTime: [
       { id: 'printables', label: 'Printables & Branding', amount: 15000, deletable: true },
@@ -95,14 +103,18 @@ const defaultState: TournamentState = {
 function computeMetrics(s: TournamentState) {
   const brandRev = s.brandPartners.reduce((a, p) => a + p.fee, 0);
   const commRev = s.communityPartners.reduce((a, p) => a + p.fee, 0);
-  const totalPlayers = s.brandPartners.reduce((a, p) => a + p.confirmedPlayers, 0) + s.communityPartners.reduce((a, p) => a + p.confirmedPlayers, 0);
+  const totalPlayers = s.communityPartners.reduce((a, p) => a + p.confirmedPlayers, 0);
   const playerFeeRev = totalPlayers * Math.min(s.playerFee, 1000);
-  const regFeeRev = (s.brandPartners.length + s.communityPartners.length) * 5000;
+  const regFeeRev = s.communityPartners.length * 5000;
   const sponsorRev = s.sponsorship.paidSponsor.enabled ? s.sponsorship.paidSponsor.amount : 0;
   const barterVal = s.sponsorship.barterShuttle.enabled ? s.sponsorship.barterShuttle.value : 0;
   const vendorRev = s.vendorStalls.count * s.vendorStalls.feePerStall;
   const sd = s.sundowner;
-  const sundownerRev = sd.enabled ? sd.generalTicketPrice * sd.generalAttendees + (sd.vipEnabled ? sd.vipTicketPrice * sd.vipAttendees : 0) : 0;
+  const sdGeneralBilled = sd.enabled ? Math.floor(sd.generalAttendees * sd.generalConversionPct / 100) : 0;
+  const sdVipBilled = (sd.enabled && sd.vipEnabled) ? Math.floor(sd.vipAttendees * sd.vipConversionPct / 100) : 0;
+  const sundownerRev = sd.enabled
+    ? sdGeneralBilled * sd.generalTicketPrice + (sd.vipEnabled ? sdVipBilled * sd.vipTicketPrice : 0)
+    : 0;
   const totalRevenue = brandRev + commRev + playerFeeRev + regFeeRev + sponsorRev + barterVal + vendorRev + sundownerRev;
   const perDaySub = s.costs.perDay.reduce((a, c) => a + c.amount, 0) * s.eventDays;
   const oneTimeSub = s.costs.oneTime.reduce((a, c) => a + c.amount, 0);
@@ -113,7 +125,7 @@ function computeMetrics(s: TournamentState) {
   const prizePool = s.costs.oneTime.find(c => c.id === 'prizes')?.amount ?? 45000;
   const mgmtFee = s.costs.oneTime.find(c => c.id === 'mgmtFee')?.amount ?? 50000;
   const rrcEarnings = mgmtFee + grossSurplus;
-  return { brandRev, commRev, playerFeeRev, regFeeRev, sponsorRev, barterVal, vendorRev, sundownerRev, totalRevenue, perDaySub, oneTimeSub, contingAmt, totalCosts, grossSurplus, prizePool, mgmtFee, rrcEarnings, totalPlayers };
+  return { brandRev, commRev, playerFeeRev, regFeeRev, sponsorRev, barterVal, vendorRev, sundownerRev, sdGeneralBilled, sdVipBilled, totalRevenue, perDaySub, oneTimeSub, contingAmt, totalCosts, grossSurplus, prizePool, mgmtFee, rrcEarnings, totalPlayers };
 }
 
 function fmt(n: number): string {
@@ -223,6 +235,32 @@ function PartnerCard({ partner, onChange, onDelete }: { partner: Partner; onChan
   );
 }
 
+function BrandPartnerCard({ partner, onChange, onDelete }: { partner: BrandPartner; onChange: (p: BrandPartner) => void; onDelete: () => void }) {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px', marginBottom: 10 }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <input type="text" value={partner.name} placeholder="Partner name"
+          onChange={e => onChange({ ...partner, name: e.target.value })}
+          style={{ ...inp, flex: 1 }}
+          onFocus={e => (e.currentTarget.style.borderColor = 'rgba(212,175,55,0.45)')}
+          onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+        />
+        <button type="button" onClick={onDelete} style={{
+          width: 34, height: 34, borderRadius: 7, border: '1px solid rgba(255,255,255,0.08)',
+          background: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}
+          onMouseOver={e => { e.currentTarget.style.color = '#C21818'; e.currentTarget.style.borderColor = 'rgba(194,24,24,0.3)'; }}
+          onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}
+        >
+          <Trash2 size={12} />
+        </button>
+      </div>
+      <div><SLabel>Sponsorship Fee</SLabel><SInput type="number" value={partner.fee} onChange={v => onChange({ ...partner, fee: Number(v) })} /></div>
+      <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>Revenue only — no players/jerseys</div>
+    </div>
+  );
+}
+
 function AddBtn({ onClick, children }: { onClick: () => void; children: React.ReactNode }) {
   return (
     <button type="button" onClick={onClick} style={{
@@ -286,9 +324,9 @@ export default function TournamentPlannerPage() {
   const meetsTarget = m.rrcEarnings >= state.targetEarnings;
   const progressPct = Math.min(Math.max((m.rrcEarnings / (state.targetEarnings || 1)) * 100, 0), 100);
 
-  const updateBP = useCallback((id: string, p: Partner) => update(s => ({ ...s, brandPartners: s.brandPartners.map(x => x.id === id ? p : x) })), []);
+  const updateBP = useCallback((id: string, p: BrandPartner) => update(s => ({ ...s, brandPartners: s.brandPartners.map(x => x.id === id ? p : x) })), []);
   const deleteBP = useCallback((id: string) => update(s => ({ ...s, brandPartners: s.brandPartners.filter(x => x.id !== id) })), []);
-  const addBP = useCallback(() => update(s => ({ ...s, brandPartners: [...s.brandPartners, { id: newId(), name: `Brand Partner ${s.brandPartners.length + 1}`, fee: 150000, pairsPerPartner: 3, confirmedPlayers: 6 }] })), []);
+  const addBP = useCallback(() => update(s => ({ ...s, brandPartners: [...s.brandPartners, { id: newId(), name: `Brand Partner ${s.brandPartners.length + 1}`, fee: 150000 }] })), []);
   const updateCP = useCallback((id: string, p: Partner) => update(s => ({ ...s, communityPartners: s.communityPartners.map(x => x.id === id ? p : x) })), []);
   const deleteCP = useCallback((id: string) => update(s => ({ ...s, communityPartners: s.communityPartners.filter(x => x.id !== id) })), []);
   const addCP = useCallback(() => update(s => ({ ...s, communityPartners: [...s.communityPartners, { id: newId(), name: `Community Partner ${s.communityPartners.length + 1}`, fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 }] })), []);
