@@ -24,6 +24,12 @@ function slugify(text: string): string {
     .replace(/-+/g, '-');
 }
 
+const inp: React.CSSProperties = {
+  width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 8, padding: '10px 14px', color: '#e8e8ec', fontSize: 14, outline: 'none',
+  boxSizing: 'border-box', fontFamily: 'var(--font-inter)',
+};
+
 export default function FormsPage() {
   const [forms, setForms] = useState<RccForm[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,67 +83,129 @@ export default function FormsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      {/* Page header */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
         <div>
-          <h1 className="text-white font-black text-2xl tracking-widest uppercase">Forms & Surveys</h1>
-          <p className="text-white/40 text-sm mt-1">{forms.length} form{forms.length !== 1 ? 's' : ''}</p>
+          <h1 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 26, color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
+            Forms &amp; Surveys
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
+            {forms.length} form{forms.length !== 1 ? 's' : ''}
+          </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#C21818] to-[#8B0000] text-white font-bold rounded-lg text-sm tracking-widest uppercase transition-all hover:shadow-[0_0_20px_rgba(194,24,24,0.4)]"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px',
+            background: 'linear-gradient(135deg, #C21818, #8B0000)',
+            border: 'none', borderRadius: 10, color: '#fff', cursor: 'pointer',
+            fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11,
+            letterSpacing: '0.12em', textTransform: 'uppercase',
+            boxShadow: '0 4px 20px rgba(194,24,24,0.3)',
+          }}
         >
-          <Plus size={14} />
-          Create New Form
+          <Plus size={14} /> Create New Form
         </button>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 size={24} className="animate-spin text-[#C21818]" />
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+          <Loader2 size={24} className="animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
         </div>
       ) : forms.length === 0 ? (
-        <div className="bg-[#0A0E1A] border border-white/10 rounded-xl p-12 text-center">
-          <div className="text-white/20 text-5xl mb-4">📋</div>
-          <div className="text-white/40 text-sm tracking-wide">No forms yet. Create your first form to get started.</div>
+        <div style={{
+          border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 16,
+          padding: '60px 32px', textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 40, marginBottom: 16, opacity: 0.3 }}>📋</div>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 20 }}>
+            No forms yet. Create your first form to get started.
+          </p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {forms.map((form) => (
-            <div key={form.id} className="bg-[#0A0E1A] border border-white/10 rounded-xl p-5 flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-white font-bold text-base truncate">{form.title}</h3>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-bold tracking-widest uppercase ${form.active ? 'bg-[#D9FF00]/10 text-[#D9FF00]' : 'bg-white/5 text-white/30'}`}>
+            <div key={form.id} style={{
+              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 14, padding: '18px 20px',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16,
+              transition: 'all 0.2s',
+            }}
+              onMouseOver={e => {
+                (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(212,175,55,0.2)';
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
+              }}
+              onMouseOut={e => {
+                (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(255,255,255,0.08)';
+                (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)';
+              }}
+            >
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                  <h3 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 14, color: '#fff', margin: 0, letterSpacing: '0.04em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {form.title}
+                  </h3>
+                  <span style={{
+                    fontSize: 9, padding: '2px 8px', borderRadius: 10,
+                    fontFamily: 'var(--font-montserrat)', fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
+                    background: form.active ? 'rgba(217,255,0,0.1)' : 'rgba(255,255,255,0.05)',
+                    color: form.active ? '#D9FF00' : 'rgba(255,255,255,0.3)',
+                  }}>
                     {form.active ? 'Active' : 'Inactive'}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-white/30 text-xs">
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>
                   <span>/forms/{form.slug}</span>
-                  <span>·</span>
+                  <span style={{ opacity: 0.4 }}>·</span>
                   <span>{Array.isArray(form.fields) ? form.fields.length : 0} field{Array.isArray(form.fields) && form.fields.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-2 flex-shrink-0">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                 <button
                   onClick={() => toggleActive(form)}
-                  className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all"
                   title={form.active ? 'Deactivate' : 'Activate'}
+                  style={{
+                    width: 34, height: 34, borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'none', color: form.active ? '#D9FF00' : 'rgba(255,255,255,0.3)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                  onMouseOut={e => { e.currentTarget.style.background = 'none'; }}
                 >
-                  {form.active ? <ToggleRight size={18} className="text-[#D9FF00]" /> : <ToggleLeft size={18} />}
+                  {form.active ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                 </button>
                 <Link
                   href={`/admin/forms/${form.id}/responses`}
-                  className="p-2 rounded-lg text-white/40 hover:text-white hover:bg-white/5 transition-all"
                   title="View responses"
+                  style={{
+                    width: 34, height: 34, borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    background: 'none', color: 'rgba(255,255,255,0.35)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    textDecoration: 'none', transition: 'all 0.15s',
+                  }}
+                  onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#fff'; (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.05)'; }}
+                  onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.35)'; (e.currentTarget as HTMLAnchorElement).style.background = 'none'; }}
                 >
-                  <BarChart2 size={16} />
+                  <BarChart2 size={15} />
                 </Link>
                 <Link
                   href={`/admin/forms/${form.id}`}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold tracking-widest uppercase bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '7px 14px', borderRadius: 8,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    background: 'rgba(255,255,255,0.04)', color: 'rgba(255,255,255,0.6)',
+                    fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11,
+                    letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none',
+                    transition: 'all 0.15s',
+                  }}
+                  onMouseOver={e => { (e.currentTarget as HTMLAnchorElement).style.color = '#fff'; (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.08)'; }}
+                  onMouseOut={e => { (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.6)'; (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)'; }}
                 >
-                  <Edit2 size={12} />
-                  Edit
+                  <Edit2 size={11} /> Edit
                 </Link>
               </div>
             </div>
@@ -147,18 +215,30 @@ export default function FormsPage() {
 
       {/* Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowModal(false)} />
-          <div className="relative bg-[#0A0E1A] border border-white/10 rounded-xl p-6 w-full max-w-md">
-            <h2 className="text-white font-black text-lg tracking-widest uppercase mb-5">Create New Form</h2>
-            <form onSubmit={handleCreate} className="space-y-4">
+        <>
+          <div onClick={() => setShowModal(false)} style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }} />
+          <div style={{
+            position: 'fixed', zIndex: 901, top: '50%', left: '50%', transform: 'translate(-50%,-50%)',
+            width: 'min(440px, calc(100vw - 32px))', background: '#0d0d18',
+            border: '1px solid rgba(212,175,55,0.15)', borderRadius: 16,
+            boxShadow: '0 32px 80px rgba(0,0,0,0.8)', padding: 32,
+          }}>
+            <h2 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 18, color: '#fff', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6 }}>
+              Create New Form
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, marginBottom: 24 }}>
+              Give your form a title and a URL slug.
+            </p>
+            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {createError && (
-                <div className="bg-[#C21818]/10 border border-[#C21818]/30 rounded-lg px-4 py-3 text-[#C21818] text-sm">
+                <div style={{ background: 'rgba(194,24,24,0.1)', border: '1px solid rgba(194,24,24,0.25)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: 13 }}>
                   {createError}
                 </div>
               )}
               <div>
-                <label className="block text-white/60 text-xs tracking-widest uppercase mb-1.5">Form Title</label>
+                <label style={{ display: 'block', fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 10, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 8 }}>
+                  Form Title
+                </label>
                 <input
                   type="text"
                   value={newTitle}
@@ -168,43 +248,51 @@ export default function FormsPage() {
                   }}
                   required
                   placeholder="e.g. RCC Tournament Registration"
-                  className="bg-[#0F1520] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#C21818] outline-none w-full"
+                  autoFocus
+                  style={inp}
+                  onFocus={e => (e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)')}
+                  onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
                 />
               </div>
               <div>
-                <label className="block text-white/60 text-xs tracking-widest uppercase mb-1.5">URL Slug</label>
-                <div className="flex items-center">
-                  <span className="text-white/30 text-sm px-3 py-2 bg-[#0F1520] border border-r-0 border-white/10 rounded-l-lg">/forms/</span>
+                <label style={{ display: 'block', fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 10, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', marginBottom: 8 }}>
+                  URL Slug
+                </label>
+                <div style={{ display: 'flex', alignItems: 'center' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 13, padding: '10px 12px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.1)', borderRight: 'none', borderRadius: '8px 0 0 8px', whiteSpace: 'nowrap' }}>
+                    /forms/
+                  </span>
                   <input
                     type="text"
                     value={newSlug}
                     onChange={(e) => setNewSlug(slugify(e.target.value))}
                     required
                     placeholder="tournament-registration"
-                    className="bg-[#0F1520] border border-white/10 rounded-r-lg px-3 py-2 text-white text-sm focus:border-[#C21818] outline-none flex-1"
+                    style={{ ...inp, borderRadius: '0 8px 8px 0', flex: 1 }}
+                    onFocus={e => (e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)')}
+                    onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
                   />
                 </div>
               </div>
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowModal(false)}
-                  className="flex-1 py-2.5 border border-white/10 text-white/50 font-bold rounded-lg text-sm tracking-widest uppercase hover:text-white hover:border-white/30 transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-[#C21818] to-[#8B0000] text-white font-bold rounded-lg text-sm tracking-widest uppercase disabled:opacity-50 flex items-center justify-center gap-2"
-                >
-                  {creating && <Loader2 size={14} className="animate-spin" />}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <button type="button" onClick={() => setShowModal(false)} style={{
+                  flex: 1, padding: '12px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: 10, color: 'rgba(255,255,255,0.5)', cursor: 'pointer',
+                  fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+                }}>Cancel</button>
+                <button type="submit" disabled={creating || !newTitle.trim()} style={{
+                  flex: 2, padding: '12px', background: 'linear-gradient(135deg, #C21818, #8B0000)',
+                  border: 'none', borderRadius: 10, color: '#fff', cursor: creating ? 'not-allowed' : 'pointer',
+                  fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: (creating || !newTitle.trim()) ? 0.6 : 1,
+                }}>
+                  {creating && <Loader2 size={13} className="animate-spin" />}
                   {creating ? 'Creating…' : 'Create Form'}
                 </button>
               </div>
             </form>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
