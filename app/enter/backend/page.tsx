@@ -4160,6 +4160,7 @@ type NavItem = {
   label: string;
   icon: string;
   badge?: number | null;
+  href?: string;
 };
 
 type NavGroup = {
@@ -4259,6 +4260,13 @@ export default function BackendPage() {
         { key: 'settings', label: 'Site Settings', icon: '⚙️' },
       ],
     },
+    {
+      label: 'Tools',
+      items: [
+        { key: 'overview' as TabKey, label: 'Tournament Planner', icon: '🏸', href: '/admin/tournament' },
+        { key: 'overview' as TabKey, label: 'Form Builder', icon: '📝', href: '/admin/forms' },
+      ],
+    },
   ];
 
   const allNavItems: NavItem[] = navGroups.flatMap(g => g.items);
@@ -4270,6 +4278,26 @@ export default function BackendPage() {
 
   function NavItemButton({ item }: { item: NavItem }) {
     const isActive = activeTab === item.key;
+    if (item.href) {
+      return (
+        <a href={item.href} style={{
+          display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+          padding: '9px 16px 9px 14px', background: 'transparent',
+          borderLeft: '3px solid transparent', borderTop: 'none', borderRight: 'none', borderBottom: 'none',
+          borderRadius: '0 6px 6px 0', color: 'rgba(255,255,255,0.45)',
+          fontFamily: 'var(--font-montserrat)', fontWeight: 500, fontSize: 13,
+          letterSpacing: '0.02em', textDecoration: 'none', whiteSpace: 'nowrap',
+          transition: 'background 0.15s, color 0.15s',
+        }}
+          onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(255,255,255,0.04)'; (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.75)'; }}
+          onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.background = 'transparent'; (e.currentTarget as HTMLAnchorElement).style.color = 'rgba(255,255,255,0.45)'; }}
+        >
+          <span style={{ fontSize: 15, lineHeight: 1, flexShrink: 0 }}>{item.icon}</span>
+          <span style={{ flex: 1 }}>{item.label}</span>
+          <span style={{ fontSize: 10, opacity: 0.4 }}>↗</span>
+        </a>
+      );
+    }
     return (
       <button
         key={item.key}
