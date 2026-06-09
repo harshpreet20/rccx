@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Plus, Trash2, ChevronUp, ChevronDown, Copy, Save, Loader2, CheckCircle, ExternalLink } from 'lucide-react';
+import { Plus, Trash2, ChevronUp, ChevronDown, Copy, Save, Loader2, CheckCircle, ExternalLink, ArrowLeft } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 type FieldType = 'text' | 'number' | 'email' | 'phone' | 'select' | 'radio' | 'checkbox' | 'textarea';
@@ -45,41 +45,60 @@ function hasOptions(type: FieldType) {
   return type === 'select' || type === 'radio' || type === 'checkbox';
 }
 
-function FieldPreview({ field }: { field: FormField }) {
-  const inputClass = 'bg-[#050810] border border-white/10 rounded-lg px-3 py-2 text-white/50 text-sm w-full pointer-events-none';
+const inp: React.CSSProperties = {
+  width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+  borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none',
+  boxSizing: 'border-box', fontFamily: 'var(--font-inter)',
+};
+
+const inpFocus = 'rgba(212,175,55,0.45)';
+const inpBlur = 'rgba(255,255,255,0.1)';
+
+function SLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-4">
-      <label className="block text-white/70 text-sm mb-1.5">
+    <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 10, letterSpacing: '0.13em', color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', marginBottom: 6 }}>
+      {children}
+    </div>
+  );
+}
+
+function FieldPreview({ field }: { field: FormField }) {
+  const previewInp: React.CSSProperties = {
+    background: 'rgba(5,8,16,0.8)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 8,
+    padding: '8px 12px', color: 'rgba(255,255,255,0.3)', fontSize: 13, width: '100%',
+    boxSizing: 'border-box', fontFamily: 'var(--font-inter)', pointerEvents: 'none',
+  };
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <label style={{ display: 'block', color: 'rgba(255,255,255,0.65)', fontSize: 13, marginBottom: 6, fontFamily: 'var(--font-inter)' }}>
         {field.label || 'Untitled field'}
-        {field.required && <span className="text-[#C21818] ml-1">*</span>}
+        {field.required && <span style={{ color: '#C21818', marginLeft: 4 }}>*</span>}
       </label>
       {field.type === 'textarea' ? (
-        <textarea className={`${inputClass} h-20 resize-none`} placeholder={field.placeholder || ''} readOnly />
+        <textarea style={{ ...previewInp, height: 72, resize: 'none' }} placeholder={field.placeholder || ''} readOnly />
       ) : field.type === 'select' ? (
-        <select className={inputClass} disabled>
+        <select style={previewInp} disabled>
           <option>{field.placeholder || 'Select an option'}</option>
           {(field.options || []).map((o, i) => <option key={i}>{o}</option>)}
         </select>
       ) : field.type === 'radio' ? (
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {(field.options || []).map((o, i) => (
-            <label key={i} className="flex items-center gap-2 text-white/60 text-sm cursor-not-allowed">
-              <input type="radio" disabled className="accent-[#C21818]" />
-              {o}
+            <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'not-allowed', fontFamily: 'var(--font-inter)' }}>
+              <input type="radio" disabled style={{ accentColor: '#C21818' }} /> {o}
             </label>
           ))}
         </div>
       ) : field.type === 'checkbox' ? (
-        <div className="space-y-2">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {(field.options || []).map((o, i) => (
-            <label key={i} className="flex items-center gap-2 text-white/60 text-sm cursor-not-allowed">
-              <input type="checkbox" disabled className="accent-[#C21818]" />
-              {o}
+            <label key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'rgba(255,255,255,0.5)', fontSize: 13, cursor: 'not-allowed', fontFamily: 'var(--font-inter)' }}>
+              <input type="checkbox" disabled style={{ accentColor: '#C21818' }} /> {o}
             </label>
           ))}
         </div>
       ) : (
-        <input type={field.type} className={inputClass} placeholder={field.placeholder || ''} readOnly />
+        <input type={field.type} style={previewInp} placeholder={field.placeholder || ''} readOnly />
       )}
     </div>
   );
@@ -130,14 +149,14 @@ export default function FormEditorPage() {
     setForm({ ...form, fields: [...form.fields, newField] });
   }
 
-  function updateField(id: string, updates: Partial<FormField>) {
+  function updateField(fid: string, updates: Partial<FormField>) {
     if (!form) return;
-    setForm({ ...form, fields: form.fields.map((f) => (f.id === id ? { ...f, ...updates } : f)) });
+    setForm({ ...form, fields: form.fields.map((f) => (f.id === fid ? { ...f, ...updates } : f)) });
   }
 
-  function deleteField(id: string) {
+  function deleteField(fid: string) {
     if (!form) return;
-    setForm({ ...form, fields: form.fields.filter((f) => f.id !== id) });
+    setForm({ ...form, fields: form.fields.filter((f) => f.id !== fid) });
   }
 
   function moveField(index: number, dir: -1 | 1) {
@@ -158,141 +177,193 @@ export default function FormEditorPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-[#C21818]" />
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+        <Loader2 size={24} className="animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
       </div>
     );
   }
 
   if (!form) {
     return (
-      <div className="text-center py-20">
-        <p className="text-white/40">Form not found.</p>
-        <Link href="/admin/forms" className="text-[#C21818] text-sm mt-2 inline-block">← Back to Forms</Link>
+      <div style={{ textAlign: 'center', padding: '60px 0' }}>
+        <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 12 }}>Form not found.</p>
+        <Link href="/admin/forms" style={{ color: '#C21818', fontSize: 13, textDecoration: 'none' }}>← Back to Forms</Link>
       </div>
     );
   }
 
   return (
     <div>
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6 gap-4">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/forms" className="text-white/40 hover:text-white transition-colors text-sm">← Forms</Link>
-          <span className="text-white/20">/</span>
-          <span className="text-white font-bold truncate">{form.title || 'Untitled Form'}</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={copyPublicLink}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold tracking-widest uppercase bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all"
-          >
-            {copied ? <CheckCircle size={12} className="text-[#D9FF00]" /> : <Copy size={12} />}
-            {copied ? 'Copied!' : 'Copy Link'}
-          </button>
-          <a
-            href={`/forms/${form.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold tracking-widest uppercase bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all"
-          >
-            <ExternalLink size={12} />
-            Preview
-          </a>
-          <Link
-            href={`/admin/forms/${id}/responses`}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold tracking-widest uppercase bg-white/5 text-white/60 hover:text-white hover:bg-white/10 transition-all"
-          >
-            Responses
-          </Link>
-          <button
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#C21818] to-[#8B0000] text-white font-bold rounded-lg text-xs tracking-widest uppercase disabled:opacity-50"
-          >
-            {saved ? <CheckCircle size={12} /> : <Save size={12} />}
-            {saved ? 'Saved' : saving ? 'Saving…' : 'Save'}
-          </button>
-        </div>
+      {/* Sticky top bar */}
+      <div style={{
+        position: 'sticky', top: 56, zIndex: 30,
+        background: 'rgba(5,8,16,0.97)', backdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        margin: '-28px -24px 28px', padding: '14px 24px',
+        display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
+      }}>
+        <Link href="/admin/forms" style={{ display: 'flex', alignItems: 'center', gap: 6, textDecoration: 'none', color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
+          <ArrowLeft size={14} /> Forms
+        </Link>
+        <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
+        <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 14, color: '#fff', letterSpacing: '0.04em' }}>
+          {form.title || 'Untitled Form'}
+        </span>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={copyPublicLink}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8, color: copied ? '#D9FF00' : 'rgba(255,255,255,0.5)',
+            cursor: 'pointer', fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11,
+            letterSpacing: '0.1em', textTransform: 'uppercase', transition: 'all 0.15s',
+          }}
+        >
+          {copied ? <CheckCircle size={12} /> : <Copy size={12} />}
+          {copied ? 'Copied!' : 'Copy Link'}
+        </button>
+        <a
+          href={`/forms/${form.slug}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8, color: 'rgba(255,255,255,0.5)',
+            fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11,
+            letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none',
+            transition: 'all 0.15s',
+          }}
+        >
+          <ExternalLink size={12} /> Preview
+        </a>
+        <Link
+          href={`/admin/forms/${id}/responses`}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '7px 14px',
+            background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: 8, color: 'rgba(255,255,255,0.5)',
+            fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11,
+            letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none',
+          }}
+        >
+          Responses
+        </Link>
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 7, padding: '9px 18px',
+            background: saved ? 'rgba(74,222,128,0.15)' : 'linear-gradient(135deg, #C21818, #8B0000)',
+            border: saved ? '1px solid rgba(74,222,128,0.3)' : 'none',
+            borderRadius: 9, color: saved ? '#4ade80' : '#fff', cursor: saving ? 'not-allowed' : 'pointer',
+            fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
+            boxShadow: saved ? 'none' : '0 4px 16px rgba(194,24,24,0.3)', opacity: saving ? 0.7 : 1,
+          }}
+        >
+          {saved ? <><CheckCircle size={13} /> Saved</> : saving ? <><Loader2 size={13} className="animate-spin" /> Saving…</> : <><Save size={13} /> Save</>}
+        </button>
       </div>
 
       {saveError && (
-        <div className="bg-[#C21818]/10 border border-[#C21818]/30 rounded-lg px-4 py-3 text-[#C21818] text-sm mb-4">
+        <div style={{ background: 'rgba(194,24,24,0.1)', border: '1px solid rgba(194,24,24,0.25)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: 13, marginBottom: 16 }}>
           {saveError}
         </div>
       )}
 
-      <div className="flex flex-col lg:flex-row gap-6">
+      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
         {/* Editor */}
-        <div className="lg:w-[55%] space-y-4">
+        <div style={{ flex: '0 0 55%', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
           {/* Form metadata */}
-          <div className="bg-[#0A0E1A] border border-white/10 rounded-xl p-5">
-            <div className="text-white/60 text-xs tracking-widest uppercase mb-4">Form Details</div>
-            <div className="space-y-3">
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>
+              Form Details
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               <div>
-                <label className="block text-white/60 text-xs tracking-widest uppercase mb-1.5">Title</label>
-                <input
-                  type="text"
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  className="bg-[#0F1520] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#C21818] outline-none w-full"
+                <SLabel>Title</SLabel>
+                <input type="text" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  style={inp}
+                  onFocus={e => (e.currentTarget.style.borderColor = inpFocus)}
+                  onBlur={e => (e.currentTarget.style.borderColor = inpBlur)}
                 />
               </div>
               <div>
-                <label className="block text-white/60 text-xs tracking-widest uppercase mb-1.5">Description</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                <SLabel>Description</SLabel>
+                <textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })}
                   rows={2}
-                  className="bg-[#0F1520] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#C21818] outline-none w-full resize-none"
+                  style={{ ...inp, resize: 'none' }}
+                  onFocus={e => (e.currentTarget.style.borderColor = inpFocus)}
+                  onBlur={e => (e.currentTarget.style.borderColor = inpBlur)}
                 />
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-white/60 text-xs tracking-widest uppercase">Active</span>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <SLabel>Active</SLabel>
                 <button
+                  type="button"
                   onClick={() => setForm({ ...form, active: !form.active })}
-                  className={`relative w-10 h-5 rounded-full transition-colors duration-200 ${form.active ? 'bg-[#D9FF00]' : 'bg-white/10'}`}
+                  style={{
+                    position: 'relative', width: 38, height: 20, borderRadius: 10, border: 'none', cursor: 'pointer', flexShrink: 0,
+                    background: form.active ? '#D9FF00' : 'rgba(255,255,255,0.1)', transition: 'background 0.2s',
+                  }}
                 >
-                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-all duration-200 ${form.active ? 'left-5' : 'left-0.5'}`} />
+                  <span style={{
+                    position: 'absolute', top: 2, width: 16, height: 16,
+                    background: form.active ? '#050810' : '#fff', borderRadius: '50%',
+                    transition: 'left 0.2s', left: form.active ? 20 : 2,
+                  }} />
                 </button>
               </div>
             </div>
           </div>
 
           {/* Fields */}
-          <div className="bg-[#0A0E1A] border border-white/10 rounded-xl p-5">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-white/60 text-xs tracking-widest uppercase">Fields ({form.fields.length})</div>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+              <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase' }}>
+                Fields ({form.fields.length})
+              </div>
             </div>
 
             {form.fields.length === 0 && (
-              <div className="text-center py-8 text-white/20 text-sm">No fields yet. Add your first field below.</div>
+              <div style={{ textAlign: 'center', padding: '24px 0', color: 'rgba(255,255,255,0.2)', fontSize: 13 }}>
+                No fields yet. Add your first field below.
+              </div>
             )}
 
             {form.fields.map((field, index) => (
-              <div key={field.id} className="bg-[#0F1520] border border-white/10 rounded-xl p-4 mb-3">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <button onClick={() => moveField(index, -1)} disabled={index === 0} className="p-1 text-white/30 hover:text-white disabled:opacity-20 transition-colors">
+              <div key={field.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px', marginBottom: 10 }}>
+                {/* Field header controls */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <button onClick={() => moveField(index, -1)} disabled={index === 0}
+                      style={{ padding: 4, background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', opacity: index === 0 ? 0.2 : 1 }}>
                       <ChevronUp size={14} />
                     </button>
-                    <button onClick={() => moveField(index, 1)} disabled={index === form.fields.length - 1} className="p-1 text-white/30 hover:text-white disabled:opacity-20 transition-colors">
+                    <button onClick={() => moveField(index, 1)} disabled={index === form.fields.length - 1}
+                      style={{ padding: 4, background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', opacity: index === form.fields.length - 1 ? 0.2 : 1 }}>
                       <ChevronDown size={14} />
                     </button>
-                    <span className="text-white/30 text-xs">#{index + 1}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11, marginLeft: 4 }}>#{index + 1}</span>
                   </div>
-                  <button onClick={() => deleteField(field.id)} className="p-1.5 text-white/30 hover:text-[#C21818] transition-colors">
+                  <button onClick={() => deleteField(field.id)}
+                    style={{ padding: 6, background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', transition: 'color 0.15s' }}
+                    onMouseOver={e => (e.currentTarget.style.color = '#C21818')}
+                    onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
+                  >
                     <Trash2 size={13} />
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
                   <div>
-                    <label className="block text-white/40 text-xs tracking-widest uppercase mb-1.5">Field Type</label>
-                    <select
-                      value={field.type}
+                    <SLabel>Field Type</SLabel>
+                    <select value={field.type}
                       onChange={(e) => updateField(field.id, { type: e.target.value as FieldType, options: hasOptions(e.target.value as FieldType) ? (field.options?.length ? field.options : ['Option 1']) : [] })}
-                      className="bg-[#050810] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#C21818] outline-none w-full"
+                      style={{ ...inp }}
+                      onFocus={e => (e.currentTarget.style.borderColor = inpFocus)}
+                      onBlur={e => (e.currentTarget.style.borderColor = inpBlur)}
                     >
                       {FIELD_TYPES.map((t) => (
                         <option key={t.value} value={t.value}>{t.label}</option>
@@ -300,61 +371,68 @@ export default function FormEditorPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-white/40 text-xs tracking-widest uppercase mb-1.5">Label</label>
-                    <input
-                      type="text"
-                      value={field.label}
+                    <SLabel>Label</SLabel>
+                    <input type="text" value={field.label}
                       onChange={(e) => updateField(field.id, { label: e.target.value })}
                       placeholder="Field label"
-                      className="bg-[#050810] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#C21818] outline-none w-full"
+                      style={inp}
+                      onFocus={e => (e.currentTarget.style.borderColor = inpFocus)}
+                      onBlur={e => (e.currentTarget.style.borderColor = inpBlur)}
                     />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 mb-3">
+                <div style={{ display: 'grid', gridTemplateColumns: !hasOptions(field.type) ? '1fr 1fr' : '1fr', gap: 10, marginBottom: hasOptions(field.type) ? 10 : 0 }}>
                   {!hasOptions(field.type) && (
                     <div>
-                      <label className="block text-white/40 text-xs tracking-widest uppercase mb-1.5">Placeholder</label>
-                      <input
-                        type="text"
-                        value={field.placeholder || ''}
+                      <SLabel>Placeholder</SLabel>
+                      <input type="text" value={field.placeholder || ''}
                         onChange={(e) => updateField(field.id, { placeholder: e.target.value })}
-                        className="bg-[#050810] border border-white/10 rounded-lg px-3 py-2 text-white text-sm focus:border-[#C21818] outline-none w-full"
+                        style={inp}
+                        onFocus={e => (e.currentTarget.style.borderColor = inpFocus)}
+                        onBlur={e => (e.currentTarget.style.borderColor = inpBlur)}
                       />
                     </div>
                   )}
-                  <div className="flex items-center gap-2 mt-auto">
-                    <label className="text-white/40 text-xs tracking-widest uppercase">Required</label>
-                    <button
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 'auto' }}>
+                    <SLabel>Required</SLabel>
+                    <button type="button"
                       onClick={() => updateField(field.id, { required: !field.required })}
-                      className={`relative w-8 h-4 rounded-full transition-colors duration-200 ${field.required ? 'bg-[#C21818]' : 'bg-white/10'}`}
+                      style={{
+                        position: 'relative', width: 32, height: 17, borderRadius: 10, border: 'none', cursor: 'pointer',
+                        background: field.required ? '#C21818' : 'rgba(255,255,255,0.1)', transition: 'background 0.2s', flexShrink: 0,
+                      }}
                     >
-                      <span className={`absolute top-0.5 w-3 h-3 bg-white rounded-full transition-all duration-200 ${field.required ? 'left-4' : 'left-0.5'}`} />
+                      <span style={{
+                        position: 'absolute', top: 2, width: 13, height: 13, background: '#fff', borderRadius: '50%',
+                        transition: 'left 0.2s', left: field.required ? 17 : 2,
+                      }} />
                     </button>
                   </div>
                 </div>
 
                 {hasOptions(field.type) && (
                   <div>
-                    <label className="block text-white/40 text-xs tracking-widest uppercase mb-2">Options</label>
+                    <SLabel>Options</SLabel>
                     {(field.options || []).map((opt, oi) => (
-                      <div key={oi} className="flex items-center gap-2 mb-2">
-                        <input
-                          type="text"
-                          value={opt}
+                      <div key={oi} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                        <input type="text" value={opt}
                           onChange={(e) => {
                             const opts = [...(field.options || [])];
                             opts[oi] = e.target.value;
                             updateField(field.id, { options: opts });
                           }}
-                          className="bg-[#050810] border border-white/10 rounded-lg px-3 py-1.5 text-white text-sm focus:border-[#C21818] outline-none flex-1"
+                          style={{ ...inp, flex: 1 }}
+                          onFocus={e => (e.currentTarget.style.borderColor = inpFocus)}
+                          onBlur={e => (e.currentTarget.style.borderColor = inpBlur)}
                         />
-                        <button
-                          onClick={() => {
-                            const opts = (field.options || []).filter((_, i) => i !== oi);
-                            updateField(field.id, { options: opts });
-                          }}
-                          className="p-1 text-white/30 hover:text-[#C21818] transition-colors"
+                        <button onClick={() => {
+                          const opts = (field.options || []).filter((_, i) => i !== oi);
+                          updateField(field.id, { options: opts });
+                        }}
+                          style={{ padding: 4, background: 'none', border: 'none', color: 'rgba(255,255,255,0.25)', cursor: 'pointer', transition: 'color 0.15s' }}
+                          onMouseOver={e => (e.currentTarget.style.color = '#C21818')}
+                          onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
                         >
                           <Trash2 size={12} />
                         </button>
@@ -362,9 +440,11 @@ export default function FormEditorPage() {
                     ))}
                     <button
                       onClick={() => updateField(field.id, { options: [...(field.options || []), `Option ${(field.options?.length || 0) + 1}`] })}
-                      className="text-xs text-white/40 hover:text-[#D4AF37] transition-colors flex items-center gap-1"
+                      style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, padding: '4px 0', transition: 'color 0.15s', fontFamily: 'var(--font-montserrat)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}
+                      onMouseOver={e => (e.currentTarget.style.color = '#D4AF37')}
+                      onMouseOut={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.3)')}
                     >
-                      <Plus size={11} /> Add option
+                      <Plus size={11} /> Add Option
                     </button>
                   </div>
                 )}
@@ -373,27 +453,47 @@ export default function FormEditorPage() {
 
             <button
               onClick={addField}
-              className="w-full py-2.5 border border-dashed border-white/20 text-white/50 hover:border-[#D4AF37] hover:text-[#D4AF37] rounded-lg text-sm font-bold tracking-widest uppercase transition-all flex items-center justify-center gap-2 mt-2"
+              style={{
+                width: '100%', padding: '10px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.15)',
+                background: 'none', color: 'rgba(255,255,255,0.35)', cursor: 'pointer', fontSize: 11,
+                fontFamily: 'var(--font-montserrat)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.15s', marginTop: 4,
+              }}
+              onMouseOver={e => { e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)'; e.currentTarget.style.color = '#D4AF37'; }}
+              onMouseOut={e => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,0.35)'; }}
             >
-              <Plus size={14} /> Add Field
+              <Plus size={13} /> Add Field
             </button>
           </div>
         </div>
 
         {/* Preview */}
-        <div className="lg:w-[45%]">
-          <div className="bg-[#0A0E1A] border border-white/10 rounded-xl p-5 sticky top-20">
-            <div className="text-white/60 text-xs tracking-widest uppercase mb-4">Live Preview</div>
-            <div className="bg-[#050810] border border-white/5 rounded-xl p-5">
-              <h2 className="text-white font-black text-lg mb-1">{form.title || 'Untitled Form'}</h2>
-              {form.description && <p className="text-white/40 text-sm mb-5">{form.description}</p>}
-              <div className={!form.description ? 'mt-4' : ''}>
+        <div style={{ flex: 1, minWidth: 0, position: 'sticky', top: 112 }}>
+          <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: 20 }}>
+            <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.14em', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: 16 }}>
+              Live Preview
+            </div>
+            <div style={{ background: 'rgba(5,8,16,0.8)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 10, padding: 20 }}>
+              <h2 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 18, color: '#fff', marginBottom: 6 }}>
+                {form.title || 'Untitled Form'}
+              </h2>
+              {form.description && (
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 13, marginBottom: 20, fontFamily: 'var(--font-inter)' }}>
+                  {form.description}
+                </p>
+              )}
+              <div style={{ marginTop: form.description ? 0 : 16 }}>
                 {form.fields.map((field) => (
                   <FieldPreview key={field.id} field={field} />
                 ))}
               </div>
               {form.fields.length > 0 && (
-                <button className="w-full py-3 bg-gradient-to-r from-[#C21818] to-[#8B0000] text-white font-bold rounded-lg text-sm tracking-widest uppercase mt-2 opacity-60 cursor-not-allowed">
+                <button style={{
+                  width: '100%', padding: '12px', background: 'linear-gradient(135deg, #C21818, #8B0000)',
+                  border: 'none', borderRadius: 8, color: '#fff',
+                  fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 12,
+                  letterSpacing: '0.12em', textTransform: 'uppercase', cursor: 'not-allowed', opacity: 0.6, marginTop: 8,
+                }}>
                   Submit
                 </button>
               )}

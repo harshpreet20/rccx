@@ -215,6 +215,45 @@ type OverviewStats = {
   statusDistribution: Record<string, number>;
 };
 
+// ─── Utility: Export CSV ─────────────────────────────────────────────────────
+
+function exportCSV(rows: Record<string, unknown>[], filename: string) {
+  if (!rows.length) return;
+  const headers = Object.keys(rows[0]);
+  const csv = [headers.join(','), ...rows.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','))].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = filename;
+  a.click();
+}
+
+// ─── Types (Player Profiles) ─────────────────────────────────────────────────
+
+type PlayerProfile = {
+  id: string;
+  full_name: string;
+  email?: string;
+  phone?: string;
+  date_of_birth?: string;
+  gender?: string;
+  city?: string;
+  area?: string;
+  skill_level?: string;
+  years_playing?: number;
+  preferred_hand?: string;
+  racket_brand?: string;
+  play_frequency?: string;
+  franchise_name?: string;
+  occupation?: string;
+  employer?: string;
+  instagram_handle?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
+  data_consent?: boolean;
+  sponsor_share_consent?: boolean;
+  created_at: string;
+};
+
 // ─── Shared styles ────────────────────────────────────────────────────────────
 
 const inputStyle: React.CSSProperties = {
@@ -956,6 +995,170 @@ function MembersModule() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ─── TAB: PLAYER PROFILES ────────────────────────────────────────────────────
+
+function PlayerProfilesModule() {
+  const [profiles, setProfiles] = useState<PlayerProfile[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<PlayerProfile | null>(null);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (msg: string, type: 'success' | 'error') => {
+    setToast({ msg, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const fetchProfiles = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('player_profiles').select('*').order('created_at', { ascending: false });
+    if (error) showToast(error.message, 'error');
+    else setProfiles(data ?? []);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchProfiles(); }, [fetchProfiles]);
+
+  const filtered = profiles.filter(p => {
+    const q = search.toLowerCase();
+    return !q || p.full_name.toLowerCase().includes(q) || (p.email ?? '').toLowerCase().includes(q) || (p.franchise_name ?? '').toLowerCase().includes(q) || (p.city ?? '').toLowerCase().includes(q);
+  });
+
+  function handleExport() {
+    exportCSV(profiles as unknown as Record<string, unknown>[], 'player_profiles.csv');
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 20, color: '#fff', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            Player Profiles
+          </div>
+          <div style={{ color: '#888899', fontSize: 13, marginTop: 4 }}>{profiles.length} profiles</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <input
+            type="text"
+            placeholder="Search by name, email, franchise, city…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{ ...inputStyle, width: 260, fontSize: 13 }}
+          />
+          <button onClick={handleExport} style={{ ...goldBtn, padding: '8px 16px', fontSize: 12 }}>
+            Export CSV
+          </button>
+        </div>
+      </div>
+      {toast && <Toast msg={toast.msg} type={toast.type} />}
+
+      <div style={{ ...glassCard, padding: 0, overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead>
+            <tr>
+              {['Name', 'Email', 'Franchise', 'Skill', 'City', 'Data Consent', 'Sponsor Share', 'Joined', 'View'].map(h => (
+                <th key={h} style={thStyle}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {loading && <LoadingRow cols={9} />}
+            {!loading && filtered.length === 0 && <EmptyRow cols={9} msg="No player profiles found." />}
+            {filtered.map(p => (
+              <tr key={p.id}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                <td style={{ ...tdStyle, fontWeight: 600 }}>{p.full_name}</td>
+                <td style={{ ...tdStyle, color: '#888899' }}>{p.email ?? '—'}</td>
+                <td style={tdStyle}>{p.franchise_name ?? '—'}</td>
+                <td style={tdStyle}>{p.skill_level ?? '—'}</td>
+                <td style={tdStyle}>{p.city ?? '—'}</td>
+                <td style={tdStyle}>
+                  <span style={{ color: p.data_consent ? '#22c55e' : '#888899', fontWeight: 600 }}>
+                    {p.data_consent ? 'Yes' : 'No'}
+                  </span>
+                </td>
+                <td style={tdStyle}>
+                  <span style={{ color: p.sponsor_share_consent ? '#D4AF37' : '#888899', fontWeight: 600 }}>
+                    {p.sponsor_share_consent ? 'Yes' : 'No'}
+                  </span>
+                </td>
+                <td style={{ ...tdStyle, color: '#888899' }}>{new Date(p.created_at).toLocaleDateString()}</td>
+                <td style={tdStyle}>
+                  <button style={goldBtn} onClick={() => setSelected(p)}>View</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Detail panel */}
+      {selected && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 1000, background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ background: '#0d0d18', border: '1px solid rgba(212,175,55,0.15)', borderRadius: 16, padding: 32, width: 'min(680px, 100%)', maxHeight: '90vh', overflowY: 'auto', position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24 }}>
+              <div>
+                <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 20, color: '#fff', letterSpacing: '0.06em' }}>{selected.full_name}</div>
+                {selected.franchise_name && <div style={{ color: '#D4AF37', fontSize: 13, marginTop: 4 }}>{selected.franchise_name}</div>}
+              </div>
+              <button onClick={() => setSelected(null)} style={{ background: 'none', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, color: '#888899', cursor: 'pointer', padding: '6px 14px', fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, letterSpacing: '0.08em' }}>
+                Close
+              </button>
+            </div>
+
+            {([
+              ['Personal', [
+                ['Full Name', selected.full_name],
+                ['Email', selected.email],
+                ['Phone', selected.phone],
+                ['Date of Birth', selected.date_of_birth],
+                ['Gender', selected.gender],
+                ['City', selected.city],
+                ['Area', selected.area],
+                ['Instagram', selected.instagram_handle ? `@${selected.instagram_handle}` : undefined],
+              ]],
+              ['Professional', [
+                ['Occupation', selected.occupation],
+                ['Employer', selected.employer],
+                ['Franchise', selected.franchise_name],
+              ]],
+              ['Athletic Profile', [
+                ['Skill Level', selected.skill_level],
+                ['Years Playing', selected.years_playing],
+                ['Preferred Hand', selected.preferred_hand],
+                ['Racket Brand', selected.racket_brand],
+                ['Play Frequency', selected.play_frequency],
+              ]],
+              ['Emergency Contact', [
+                ['Name', selected.emergency_contact_name],
+                ['Phone', selected.emergency_contact_phone],
+              ]],
+              ['Consent', [
+                ['Data Consent', selected.data_consent ? 'Yes' : 'No'],
+                ['Sponsor Share Consent', selected.sponsor_share_consent ? 'Yes' : 'No'],
+                ['Joined', new Date(selected.created_at).toLocaleString()],
+              ]],
+            ] as [string, [string, string | number | undefined][]][]).map(([section, fields]) => (
+              <div key={section} style={{ marginBottom: 20 }}>
+                <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 10, letterSpacing: '0.14em', color: '#D4AF37', textTransform: 'uppercase', marginBottom: 10 }}>{section}</div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4px 16px' }}>
+                  {fields.map(([label, value]) => value != null && (
+                    <div key={label} style={{ display: 'flex', flexDirection: 'column', padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                      <span style={{ color: '#888899', fontSize: 11, fontFamily: 'var(--font-montserrat)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{label}</span>
+                      <span style={{ color: '#e8e8ec', fontSize: 13, marginTop: 2 }}>{String(value)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -4317,7 +4520,7 @@ function SiteSettingsModule() {
   );
 }
 
-type TabKey = 'overview' | 'members' | 'registrations' | 'contacts' | 'support' | 'events' | 'leaderboard' | 'announcements' | 'instagram' | 'spotlights' | 'partners' | 'chatlogs' | 'blog' | 'newsletter' | 'users' | 'aicontext' | 'settings';
+type TabKey = 'overview' | 'members' | 'playerprofiles' | 'registrations' | 'contacts' | 'support' | 'events' | 'leaderboard' | 'announcements' | 'instagram' | 'spotlights' | 'partners' | 'chatlogs' | 'blog' | 'newsletter' | 'users' | 'aicontext' | 'settings';
 
 type NavItem = {
   key: TabKey;
@@ -4397,6 +4600,7 @@ export default function BackendPage() {
       label: 'Content',
       items: [
         { key: 'members', label: 'Members', icon: '👥', badge: pendingCount > 0 ? pendingCount : undefined },
+        { key: 'playerprofiles', label: 'Player Profiles', icon: '🎾' },
         { key: 'registrations', label: 'Registrations', icon: '📋' },
         { key: 'contacts', label: 'Contact Inbox', icon: '📩' },
         { key: 'support',  label: 'Support Tickets', icon: '🎫' },
@@ -4819,6 +5023,7 @@ export default function BackendPage() {
           <div style={{ flex: 1, padding: 'clamp(24px,3vw,40px) clamp(20px,3vw,40px)', overflowY: 'auto' }}>
             {activeTab === 'overview'      && <OverviewModule />}
             {activeTab === 'members'       && <MembersModule />}
+            {activeTab === 'playerprofiles' && <PlayerProfilesModule />}
             {activeTab === 'registrations' && <RegistrationsModule />}
             {activeTab === 'contacts'      && <ContactsModule />}
             {activeTab === 'support'       && <SupportTicketsModule />}
