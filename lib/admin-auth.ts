@@ -10,6 +10,24 @@ export type AdminAuthState = {
   loading: boolean;
 };
 
+async function resolveIsOrganizer(user: User): Promise<boolean> {
+  // Check admin_users table first (email-based, covers super_admin + admin roles)
+  const { data: adminRow } = await supabase
+    .from('admin_users')
+    .select('role')
+    .eq('email', user.email)
+    .maybeSingle();
+  if (adminRow?.role) return true;
+
+  // Fall back to rcc_organizers (user_id-based)
+  const { data: organizer } = await supabase
+    .from('rcc_organizers')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
+  return !!organizer;
+}
+
 export function useAdminAuth(): AdminAuthState {
   const [state, setState] = useState<AdminAuthState>({
     user: null,
@@ -31,19 +49,8 @@ export function useAdminAuth(): AdminAuthState {
           return;
         }
 
-        const { data: organizer } = await supabase
-          .from('rcc_organizers')
-          .select('user_id, name')
-          .eq('user_id', session.user.id)
-          .maybeSingle();
-
-        if (mounted) {
-          setState({
-            user: session.user,
-            isOrganizer: !!organizer,
-            loading: false,
-          });
-        }
+        const isOrganizer = await resolveIsOrganizer(session.user);
+        if (mounted) setState({ user: session.user, isOrganizer, loading: false });
       } catch {
         if (mounted) setState({ user: null, isOrganizer: false, loading: false });
       }
@@ -58,19 +65,11 @@ export function useAdminAuth(): AdminAuthState {
         if (mounted) setState({ user: null, isOrganizer: false, loading: false });
         return;
       }
-
-      const { data: organizer } = await supabase
-        .from('rcc_organizers')
-        .select('user_id, name')
-        .eq('user_id', session.user.id)
-        .maybeSingle();
-
-      if (mounted) {
-        setState({
-          user: session.user,
-          isOrganizer: !!organizer,
-          loading: false,
-        });
+      try {
+        const isOrganizer = await resolveIsOrganizer(session.user);
+        if (mounted) setState({ user: session.user, isOrganizer, loading: false });
+      } catch {
+        if (mounted) setState({ user: null, isOrganizer: false, loading: false });
       }
     });
 
