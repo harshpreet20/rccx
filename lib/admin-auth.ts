@@ -10,11 +10,10 @@ export type AdminAuthState = {
   loading: boolean;
 };
 
-async function resolveIsOrganizer(_user: User): Promise<boolean> {
-  // Use SECURITY DEFINER RPC — bypasses GRANT issues on admin_users
-  const { data, error } = await supabase.rpc('check_is_admin');
-  if (error) throw error;
-  return data === true;
+function isAdminUser(user: User): boolean {
+  // app_metadata.is_admin is set server-side via SQL and embedded in the JWT.
+  // No DB query needed — reads directly from the session token.
+  return user.app_metadata?.is_admin === true;
 }
 
 export function useAdminAuth(): AdminAuthState {
@@ -27,38 +26,23 @@ export function useAdminAuth(): AdminAuthState {
   useEffect(() => {
     let mounted = true;
 
-    async function checkAuth() {
-      try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (!session?.user) {
-          if (mounted) setState({ user: null, isOrganizer: false, loading: false });
-          return;
-        }
-
-        const isOrganizer = await resolveIsOrganizer(session.user);
-        if (mounted) setState({ user: session.user, isOrganizer, loading: false });
-      } catch {
-        if (mounted) setState({ user: null, isOrganizer: false, loading: false });
+    // Check existing session on mount
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      if (session?.user) {
+        setState({ user: session.user, isOrganizer: isAdminUser(session.user), loading: false });
+      } else {
+        setState({ user: null, isOrganizer: false, loading: false });
       }
-    }
+    });
 
-    checkAuth();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (!session?.user) {
-        if (mounted) setState({ user: null, isOrganizer: false, loading: false });
-        return;
-      }
-      try {
-        const isOrganizer = await resolveIsOrganizer(session.user);
-        if (mounted) setState({ user: session.user, isOrganizer, loading: false });
-      } catch {
-        if (mounted) setState({ user: null, isOrganizer: false, loading: false });
+    // React to sign-in / sign-out
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      if (session?.user) {
+        setState({ user: session.user, isOrganizer: isAdminUser(session.user), loading: false });
+      } else {
+        setState({ user: null, isOrganizer: false, loading: false });
       }
     });
 
