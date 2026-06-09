@@ -453,7 +453,7 @@ export default function TournamentPlannerPage() {
           <Card>
             <SectionTitle>Brand Partners ({state.brandPartners.length})</SectionTitle>
             {state.brandPartners.map(p => (
-              <PartnerCard key={p.id} partner={p} onChange={u => updateBP(p.id, u)} onDelete={() => deleteBP(p.id)} />
+              <BrandPartnerCard key={p.id} partner={p} onChange={u => updateBP(p.id, u)} onDelete={() => deleteBP(p.id)} />
             ))}
             <AddBtn onClick={addBP}>Add Brand Partner</AddBtn>
           </Card>
@@ -506,19 +506,47 @@ export default function TournamentPlannerPage() {
             </div>
             {state.sundowner.enabled && (
               <div style={{ paddingLeft: 10, borderLeft: '2px solid rgba(217,255,0,0.2)' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 10 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
                   <div><SLabel>Ticket Price</SLabel><SInput type="number" value={state.sundowner.generalTicketPrice} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, generalTicketPrice: Number(v) } }))} /></div>
-                  <div><SLabel>Attendees</SLabel><SInput type="number" value={state.sundowner.generalAttendees} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, generalAttendees: Number(v) } }))} /></div>
+                  <div><SLabel>Attendees (invited)</SLabel><SInput type="number" value={state.sundowner.generalAttendees} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, generalAttendees: Number(v) } }))} /></div>
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <SLabel>Billing Conversion %</SLabel>
+                    <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 13, color: '#fff' }}>{state.sundowner.generalConversionPct}%</span>
+                  </div>
+                  <input type="range" min={0} max={100} step={5} value={state.sundowner.generalConversionPct}
+                    onChange={e => update(s => ({ ...s, sundowner: { ...s.sundowner, generalConversionPct: Number(e.target.value) } }))}
+                    style={{ width: '100%', accentColor: '#D4AF37', marginBottom: 4 }}
+                  />
+                  <div style={{ fontSize: 11, color: 'rgba(212,175,55,0.7)' }}>
+                    → {m.sdGeneralBilled} billed @ ₹{state.sundowner.generalTicketPrice} = {fmt(m.sdGeneralBilled * state.sundowner.generalTicketPrice)}
+                  </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: state.sundowner.vipEnabled ? 10 : 0 }}>
                   <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>VIP Tickets</span>
                   <Toggle on={state.sundowner.vipEnabled} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, vipEnabled: v } }))} />
                 </div>
                 {state.sundowner.vipEnabled && (
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-                    <div><SLabel>VIP Price</SLabel><SInput type="number" value={state.sundowner.vipTicketPrice} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, vipTicketPrice: Number(v) } }))} /></div>
-                    <div><SLabel>VIP Attendees</SLabel><SInput type="number" value={state.sundowner.vipAttendees} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, vipAttendees: Number(v) } }))} /></div>
-                  </div>
+                  <>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                      <div><SLabel>VIP Price</SLabel><SInput type="number" value={state.sundowner.vipTicketPrice} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, vipTicketPrice: Number(v) } }))} /></div>
+                      <div><SLabel>VIP Attendees (invited)</SLabel><SInput type="number" value={state.sundowner.vipAttendees} onChange={v => update(s => ({ ...s, sundowner: { ...s.sundowner, vipAttendees: Number(v) } }))} /></div>
+                    </div>
+                    <div style={{ marginBottom: 4 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <SLabel>VIP Billing Conversion %</SLabel>
+                        <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 13, color: '#fff' }}>{state.sundowner.vipConversionPct}%</span>
+                      </div>
+                      <input type="range" min={0} max={100} step={5} value={state.sundowner.vipConversionPct}
+                        onChange={e => update(s => ({ ...s, sundowner: { ...s.sundowner, vipConversionPct: Number(e.target.value) } }))}
+                        style={{ width: '100%', accentColor: '#D4AF37', marginBottom: 4 }}
+                      />
+                      <div style={{ fontSize: 11, color: 'rgba(212,175,55,0.7)' }}>
+                        → {m.sdVipBilled} billed @ ₹{state.sundowner.vipTicketPrice} = {fmt(m.sdVipBilled * state.sundowner.vipTicketPrice)}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             )}
