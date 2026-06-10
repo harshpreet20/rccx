@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { Plus, Trash2, Save, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Save, CheckCircle, ArrowLeft, Loader2, LayoutDashboard, Users, Wallet, UserCheck, Calendar, Trophy, Settings as SettingsIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -35,10 +35,29 @@ interface PerDayCost {
   amount: number;
 }
 
+interface ScheduleDay {
+  day: number;
+  date: string;
+  notes: string;
+}
+
+interface PrizeDistribution {
+  first: number;
+  second: number;
+  third: number;
+}
+
+type Mode = 'financial' | 'tournament' | 'casual';
+
+type TabKey = 'overview' | 'partners' | 'finance' | 'players' | 'schedule' | 'prizes' | 'settings';
+
 interface TournamentState {
   eventName: string;
+  mode: Mode;
   eventDays: number;
   targetEarnings: number;
+  schedule: ScheduleDay[];
+  prizeDistribution: PrizeDistribution;
   brandPartners: BrandPartner[];
   communityPartners: Partner[];
   playerFee: number;
@@ -72,8 +91,15 @@ function newId() {
 
 const defaultState: TournamentState = {
   eventName: 'New Tournament',
+  mode: 'financial',
   eventDays: 2,
   targetEarnings: 150000,
+  schedule: [
+    { day: 1, date: '', notes: '' },
+    { day: 2, date: '', notes: '' },
+    { day: 3, date: '', notes: '' },
+  ],
+  prizeDistribution: { first: 56, second: 33, third: 11 },
   brandPartners: [{ id: '1', name: 'Brand Partner 1', fee: 150000 }],
   communityPartners: [{ id: '2', name: 'Community Partner 1', fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 }],
   playerFee: 1000,
@@ -286,6 +312,37 @@ function MetaRow({ label, value, color, bold }: { label: string; value: string; 
   );
 }
 
+function ShuttlecockIcon({ size = 20, color = '#D4AF37' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="18" r="3" stroke={color} strokeWidth="1.5" fill={color} fillOpacity="0.15" />
+      <line x1="12" y1="15" x2="8" y2="4" stroke={color} strokeWidth="1.2" opacity="0.7" />
+      <line x1="12" y1="15" x2="12" y2="3" stroke={color} strokeWidth="1.4" />
+      <line x1="12" y1="15" x2="16" y2="4" stroke={color} strokeWidth="1.2" opacity="0.7" />
+      <path d="M7.5 5.5 Q12 2 16.5 5.5" stroke={color} strokeWidth="1.2" fill="none" opacity="0.6" />
+      <path d="M8.5 7.5 Q12 4.5 15.5 7.5" stroke={color} strokeWidth="1" fill="none" opacity="0.5" />
+    </svg>
+  );
+}
+
+function PanelHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+      <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.16em', color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase' }}>{children}</span>
+      <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
+    </div>
+  );
+}
+
+function StatBox({ label, value, color }: { label: string; value: string; color?: string }) {
+  return (
+    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '14px 18px' }}>
+      <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 20, color: color ?? '#fff' }}>{value}</div>
+    </div>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 
 export default function TournamentPlannerPage() {
@@ -298,6 +355,7 @@ export default function TournamentPlannerPage() {
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [dirty, setDirty] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
   useEffect(() => {
     async function load() {

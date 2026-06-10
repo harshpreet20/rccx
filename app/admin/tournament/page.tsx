@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Trophy, ChevronRight, Trash2, Loader2, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, ChevronRight, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface TournamentConfig {
@@ -11,6 +11,40 @@ interface TournamentConfig {
   config: Record<string, unknown>;
   created_at: string;
   updated_at: string;
+}
+
+type Mode = 'financial' | 'tournament' | 'casual';
+
+const MODE_META: Record<Mode, { label: string; accent: string; chipBg: string; chipBorder: string }> = {
+  financial: { label: 'Financial', accent: '#D4AF37', chipBg: 'rgba(212,175,55,0.12)', chipBorder: 'rgba(212,175,55,0.3)' },
+  tournament: { label: 'Tournament', accent: '#C21818', chipBg: 'rgba(194,24,24,0.12)', chipBorder: 'rgba(194,24,24,0.3)' },
+  casual: { label: 'Casual', accent: '#3B82F6', chipBg: 'rgba(59,130,246,0.12)', chipBorder: 'rgba(59,130,246,0.3)' },
+};
+
+function ShuttlecockIcon({ size = 20, color = '#D4AF37' }: { size?: number; color?: string }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="18" r="3" stroke={color} strokeWidth="1.5" fill={color} fillOpacity="0.15" />
+      <line x1="12" y1="15" x2="8" y2="4" stroke={color} strokeWidth="1.2" opacity="0.7" />
+      <line x1="12" y1="15" x2="12" y2="3" stroke={color} strokeWidth="1.4" />
+      <line x1="12" y1="15" x2="16" y2="4" stroke={color} strokeWidth="1.2" opacity="0.7" />
+      <path d="M7.5 5.5 Q12 2 16.5 5.5" stroke={color} strokeWidth="1.2" fill="none" opacity="0.6" />
+      <path d="M8.5 7.5 Q12 4.5 15.5 7.5" stroke={color} strokeWidth="1" fill="none" opacity="0.5" />
+    </svg>
+  );
+}
+
+function CourtAccent() {
+  return (
+    <svg width={120} height={80} viewBox="0 0 120 80" fill="none"
+      style={{ position: 'absolute', top: 8, right: 8, opacity: 0.04, pointerEvents: 'none' }}>
+      <rect x="2" y="2" width="116" height="76" stroke="#fff" strokeWidth="1.5" />
+      <line x1="60" y1="2" x2="60" y2="78" stroke="#fff" strokeWidth="1.5" />
+      <line x1="30" y1="2" x2="30" y2="78" stroke="#fff" strokeWidth="1" />
+      <line x1="90" y1="2" x2="90" y2="78" stroke="#fff" strokeWidth="1" />
+      <line x1="2" y1="40" x2="118" y2="40" stroke="#fff" strokeWidth="1" />
+    </svg>
+  );
 }
 
 function formatINR(n: number): string {
@@ -32,10 +66,9 @@ function formatINR(n: number): string {
 function getMetricsFromConfig(config: Record<string, unknown>) {
   try {
     const c = config as {
-      targetEarnings?: number;
+      mode?: Mode;
       brandPartners?: { fee: number }[];
       communityPartners?: { fee: number; confirmedPlayers: number }[];
-      costs?: { oneTime?: { amount: number }[]; perDay?: { amount: number }[]; contingencyPct?: number };
       eventDays?: number;
     };
     const revenue = [
@@ -43,11 +76,32 @@ function getMetricsFromConfig(config: Record<string, unknown>) {
       ...(c.communityPartners ?? []),
     ].reduce((s, p) => s + (p.fee || 0), 0);
     const players = (c.communityPartners ?? []).reduce((s, p) => s + (p.confirmedPlayers || 0), 0);
-    const target = c.targetEarnings ?? 0;
-    return { revenue, players, target };
+    const days = c.eventDays ?? 0;
+    const mode: Mode = c.mode ?? 'financial';
+    return { revenue, players, days, mode };
   } catch {
-    return { revenue: 0, players: 0, target: 0 };
+    return { revenue: 0, players: 0, days: 0, mode: 'financial' as Mode };
   }
+}
+
+function daysAgo(dateStr: string): string {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const d = Math.floor(diff / 86400000);
+  if (d <= 0) return 'today';
+  if (d === 1) return '1 day ago';
+  return `${d} days ago`;
+}
+
+function StatChip({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div style={{
+      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10,
+      padding: '12px 18px', minWidth: 130,
+    }}>
+      <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+      <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 18, color: accent }}>{value}</div>
+    </div>
+  );
 }
 
 export default function TournamentListPage() {
@@ -58,6 +112,7 @@ export default function TournamentListPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | Mode>('all');
 
   useEffect(() => { loadConfigs(); }, []);
 
@@ -99,16 +154,36 @@ export default function TournamentListPage() {
     setDeletingId(null);
   }
 
+  // Header stats
+  const enriched = configs.map(c => ({ cfg: c, ...getMetricsFromConfig(c.config) }));
+  const totalEvents = configs.length;
+  const activeThisSeason = enriched.filter(e =>
+    Date.now() - new Date(e.cfg.updated_at).getTime() < 120 * 86400000
+  ).length;
+  const totalPrizePool = enriched.reduce((s, e) => s + e.revenue, 0);
+
+  const filtered = enriched.filter(e => filter === 'all' || e.mode === filter);
+
+  const tabs: { key: 'all' | Mode; label: string }[] = [
+    { key: 'all', label: 'All' },
+    { key: 'financial', label: 'Financial' },
+    { key: 'tournament', label: 'Tournament' },
+    { key: 'casual', label: 'Casual Play' },
+  ];
+
   return (
     <div>
       {/* Page header */}
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 16 }}>
         <div>
-          <h1 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 26, color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
-            Tournament Planner
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>
-            Financial planning for each RCC event
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 6 }}>
+            <ShuttlecockIcon size={30} color="#D4AF37" />
+            <h1 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 28, color: '#fff', letterSpacing: '0.06em', textTransform: 'uppercase', margin: 0 }}>
+              Tournament Hub
+            </h1>
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13, letterSpacing: '0.08em' }}>
+            Plan · Organise · Execute
           </p>
         </div>
         <button
@@ -126,18 +201,47 @@ export default function TournamentListPage() {
         </button>
       </div>
 
+      {/* Header stat chips */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 28, flexWrap: 'wrap' }}>
+        <StatChip label="Total Events" value={String(totalEvents)} accent="#fff" />
+        <StatChip label="Active this Season" value={String(activeThisSeason)} accent="#4ade80" />
+        <StatChip label="Total Prize Pool" value={formatINR(totalPrizePool)} accent="#D4AF37" />
+      </div>
+
+      {/* Mode filter tabs */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
+        {tabs.map(t => {
+          const active = filter === t.key;
+          return (
+            <button key={t.key} onClick={() => setFilter(t.key)} style={{
+              padding: '8px 18px', borderRadius: 999, cursor: 'pointer',
+              fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+              background: active ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+              border: active ? '1px solid rgba(212,175,55,0.35)' : '1px solid rgba(255,255,255,0.08)',
+              color: active ? '#D4AF37' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s',
+            }}>
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* List */}
       {loading ? (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
           <Loader2 size={24} className="animate-spin" style={{ color: 'rgba(255,255,255,0.3)' }} />
         </div>
-      ) : configs.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div style={{
           border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 16,
           padding: '60px 32px', textAlign: 'center',
         }}>
-          <Trophy size={36} style={{ color: 'rgba(255,255,255,0.15)', margin: '0 auto 16px' }} />
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 20 }}>No tournaments yet</p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <ShuttlecockIcon size={36} color="rgba(255,255,255,0.2)" />
+          </div>
+          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 14, marginBottom: 20 }}>
+            {configs.length === 0 ? 'No tournaments yet' : 'No tournaments in this mode'}
+          </p>
           <button onClick={() => setShowModal(true)} style={{
             padding: '10px 20px', background: 'rgba(194,24,24,0.15)', border: '1px solid rgba(194,24,24,0.3)',
             borderRadius: 8, color: '#C21818', cursor: 'pointer',
@@ -148,18 +252,17 @@ export default function TournamentListPage() {
         </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
-          {configs.map(config => {
-            const { revenue, players, target } = getMetricsFromConfig(config.config);
-            const hasData = revenue > 0;
+          {filtered.map(({ cfg: config, revenue, players, days, mode }) => {
+            const meta = MODE_META[mode];
             return (
               <Link key={config.id} href={`/admin/tournament/${config.id}`} style={{ textDecoration: 'none' }}>
                 <div style={{
                   background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-                  borderRadius: 14, padding: 20, cursor: 'pointer', transition: 'all 0.2s',
-                  position: 'relative',
+                  borderRadius: 14, padding: '20px 20px 20px 24px', cursor: 'pointer', transition: 'all 0.2s',
+                  position: 'relative', overflow: 'hidden',
                 }}
                   onMouseOver={e => {
-                    (e.currentTarget as HTMLDivElement).style.border = '1px solid rgba(212,175,55,0.25)';
+                    (e.currentTarget as HTMLDivElement).style.border = `1px solid ${meta.chipBorder}`;
                     (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.05)';
                   }}
                   onMouseOut={e => {
@@ -167,23 +270,29 @@ export default function TournamentListPage() {
                     (e.currentTarget as HTMLDivElement).style.background = 'rgba(255,255,255,0.03)';
                   }}
                 >
+                  {/* Left accent bar */}
+                  <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: meta.accent }} />
+                  <CourtAccent />
+
                   {/* Card header */}
-                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16, position: 'relative' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                       <div style={{
                         width: 36, height: 36, borderRadius: 8,
-                        background: 'rgba(194,24,24,0.12)', border: '1px solid rgba(194,24,24,0.2)',
+                        background: meta.chipBg, border: `1px solid ${meta.chipBorder}`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                       }}>
-                        <Trophy size={16} color="#C21818" />
+                        <ShuttlecockIcon size={18} color={meta.accent} />
                       </div>
                       <div>
                         <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 14, color: '#fff', letterSpacing: '0.04em' }}>
                           {config.config_name}
                         </div>
-                        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 11, marginTop: 2 }}>
-                          Updated {new Date(config.updated_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        </div>
+                        <span style={{
+                          display: 'inline-block', marginTop: 5, padding: '2px 8px', borderRadius: 999,
+                          background: meta.chipBg, border: `1px solid ${meta.chipBorder}`, color: meta.accent,
+                          fontSize: 9, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+                        }}>{meta.label}</span>
                       </div>
                     </div>
                     <button
@@ -201,31 +310,25 @@ export default function TournamentListPage() {
                     </button>
                   </div>
 
-                  {/* Metrics */}
-                  {hasData ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
-                      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
-                        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>Revenue</div>
-                        <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 15, color: '#fff' }}>{formatINR(revenue)}</div>
+                  {/* Mini stats */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14, position: 'relative' }}>
+                    {[
+                      { label: 'Revenue', value: formatINR(revenue), color: '#fff' },
+                      { label: 'Players', value: String(players), color: '#fff' },
+                      { label: 'Days', value: String(days), color: '#fff' },
+                    ].map(s => (
+                      <div key={s.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
+                        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 9, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>{s.label}</div>
+                        <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 14, color: s.color }}>{s.value}</div>
                       </div>
-                      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: '10px 12px' }}>
-                        <div style={{ color: 'rgba(255,255,255,0.3)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>Target</div>
-                        <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 15, color: '#D4AF37' }}>{formatINR(target)}</div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div style={{ background: 'rgba(255,255,255,0.02)', borderRadius: 8, padding: '12px', marginBottom: 14, textAlign: 'center', color: 'rgba(255,255,255,0.2)', fontSize: 12 }}>
-                      No data yet — open to configure
-                    </div>
-                  )}
+                    ))}
+                  </div>
 
                   {/* Footer */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    {players > 0 ? (
-                      <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>{players} players</span>
-                    ) : <span />}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: 12 }}>Updated {daysAgo(config.updated_at)}</span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#D4AF37', fontSize: 12, fontWeight: 700 }}>
-                      Open Planner <ChevronRight size={13} />
+                      Open <ChevronRight size={13} />
                     </span>
                   </div>
                 </div>
@@ -258,7 +361,7 @@ export default function TournamentListPage() {
                 </label>
                 <input
                   type="text" value={newName} onChange={e => setNewName(e.target.value)}
-                  placeholder="e.g. RCC Doubles Cup – Season 2" autoFocus required
+                  placeholder="e.g. RCC Doubles Cup - Season 2" autoFocus required
                   style={{ width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 10, padding: '12px 14px', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => (e.currentTarget.style.borderColor = 'rgba(212,175,55,0.4)')}
                   onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)')}
@@ -277,7 +380,7 @@ export default function TournamentListPage() {
                   fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, opacity: creating ? 0.6 : 1,
                 }}>
-                  {creating ? <><Loader2 size={13} className="animate-spin" /> Creating…</> : 'Create & Open'}
+                  {creating ? <><Loader2 size={13} className="animate-spin" /> Creating</> : 'Create & Open'}
                 </button>
               </div>
             </form>
