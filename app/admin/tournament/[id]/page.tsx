@@ -389,6 +389,28 @@ export default function TournamentPlannerPage() {
   const deleteCP = useCallback((id: string) => update(s => ({ ...s, communityPartners: s.communityPartners.filter(x => x.id !== id) })), []);
   const addCP = useCallback(() => update(s => ({ ...s, communityPartners: [...s.communityPartners, { id: newId(), name: `Community Partner ${s.communityPartners.length + 1}`, fee: 40000, pairsPerPartner: 1, confirmedPlayers: 2 }] })), []);
 
+  function setMode(mode: Mode) { update(s => ({ ...s, mode })); }
+  function resetDefaults() {
+    if (!confirm('Reset this tournament to default values? This cannot be undone until you re-save.')) return;
+    update(s => ({ ...defaultState, eventName: s.eventName }));
+    setActiveTab('overview');
+  }
+  function setSchedule(day: number, patch: Partial<ScheduleDay>) {
+    update(s => ({ ...s, schedule: s.schedule.map(d => d.day === day ? { ...d, ...patch } : d) }));
+  }
+  // Normalise prize distribution so the three places always sum to 100
+  function setPrizePct(key: keyof PrizeDistribution, value: number) {
+    update(s => {
+      const others = (['first', 'second', 'third'] as (keyof PrizeDistribution)[]).filter(k => k !== key);
+      const v = Math.min(Math.max(value, 0), 100);
+      const remaining = 100 - v;
+      const prevOthersTotal = others.reduce((a, k) => a + s.prizeDistribution[k], 0) || 1;
+      const next = { ...s.prizeDistribution, [key]: v } as PrizeDistribution;
+      others.forEach(k => { next[k] = Math.round(remaining * (s.prizeDistribution[k] / prevOthersTotal)); });
+      return { ...s, prizeDistribution: next };
+    });
+  }
+
   async function handleSave() {
     setSaving(true);
     setSaveError('');
@@ -435,8 +457,28 @@ export default function TournamentPlannerPage() {
         {/* Editable name */}
         <input type="text" value={state.eventName}
           onChange={e => update(s => ({ ...s, eventName: e.target.value }))}
-          style={{ background: 'none', border: 'none', outline: 'none', color: '#fff', fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 15, letterSpacing: '0.06em', minWidth: 120 }}
+          style={{ background: 'none', border: 'none', outline: 'none', color: '#fff', fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 17, letterSpacing: '0.06em', minWidth: 140 }}
         />
+
+        {/* Mode selector */}
+        <div style={{ display: 'flex', gap: 4 }}>
+          {([
+            { key: 'financial', label: '💰 Financial' },
+            { key: 'tournament', label: '🏸 Tournament' },
+            { key: 'casual', label: '🎮 Casual' },
+          ] as { key: Mode; label: string }[]).map(opt => {
+            const on = state.mode === opt.key;
+            return (
+              <button key={opt.key} type="button" onClick={() => setMode(opt.key)} style={{
+                padding: '6px 11px', borderRadius: 8, cursor: 'pointer', fontSize: 11,
+                fontFamily: 'var(--font-montserrat)', fontWeight: 700, letterSpacing: '0.04em',
+                border: on ? '1px solid rgba(212,175,55,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                background: on ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                color: on ? '#D4AF37' : 'rgba(255,255,255,0.45)', whiteSpace: 'nowrap',
+              }}>{opt.label}</button>
+            );
+          })}
+        </div>
 
         <div style={{ flex: 1 }} />
 
@@ -468,46 +510,118 @@ export default function TournamentPlannerPage() {
 
       {saveError && <div style={{ background: 'rgba(194,24,24,0.1)', border: '1px solid rgba(194,24,24,0.25)', borderRadius: 8, padding: '10px 14px', color: '#f87171', fontSize: 13, marginBottom: 16 }}>{saveError}</div>}
 
-      {/* ── Two-column layout ── */}
-      <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start' }}>
+      {/* ── Tab navigation ── */}
+      <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid rgba(255,255,255,0.07)', marginBottom: 28, overflowX: 'auto' }}>
+        {([
+          { key: 'overview', label: 'Overview', Icon: LayoutDashboard },
+          { key: 'partners', label: 'Partners', Icon: Users },
+          { key: 'finance', label: 'Finance', Icon: Wallet },
+          { key: 'players', label: 'Players', Icon: UserCheck },
+          { key: 'schedule', label: 'Schedule', Icon: Calendar },
+          { key: 'prizes', label: 'Prizes', Icon: Trophy },
+          { key: 'settings', label: 'Settings', Icon: SettingsIcon },
+        ] as { key: TabKey; label: string; Icon: typeof Users }[]).map(({ key, label, Icon }) => {
+          const on = activeTab === key;
+          return (
+            <button key={key} type="button" onClick={() => setActiveTab(key)} style={{
+              display: 'flex', alignItems: 'center', gap: 7, padding: '10px 18px', borderRadius: '8px 8px 0 0',
+              border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', background: on ? 'rgba(212,175,55,0.1)' : 'transparent',
+              borderBottom: on ? '2px solid #D4AF37' : '2px solid transparent',
+              fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: on ? '#D4AF37' : 'rgba(255,255,255,0.4)', transition: 'all 0.15s',
+            }}
+              onMouseOver={e => { if (!on) e.currentTarget.style.color = 'rgba(255,255,255,0.7)'; }}
+              onMouseOut={e => { if (!on) e.currentTarget.style.color = 'rgba(255,255,255,0.4)'; }}
+            >
+              <Icon size={13} /> {label}
+            </button>
+          );
+        })}
+      </div>
 
-        {/* ── LEFT: inputs ── */}
-        <div style={{ flex: '0 0 42%', minWidth: 0 }}>
-
-          {/* Event Settings */}
-          <Card>
-            <SectionTitle>Event Settings</SectionTitle>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
-              <div style={{ gridColumn: '1/-1' }}>
-                <SLabel>Event Name</SLabel>
-                <SInput value={state.eventName} onChange={v => update(s => ({ ...s, eventName: v }))} />
-              </div>
-              <div>
-                <SLabel>Target Earnings (₹)</SLabel>
-                <SInput type="number" value={state.targetEarnings} onChange={v => update(s => ({ ...s, targetEarnings: Number(v) }))} />
-              </div>
-              <div>
-                <SLabel>Player Fee (max ₹1,000)</SLabel>
-                <SInput type="number" value={state.playerFee} onChange={v => update(s => ({ ...s, playerFee: Math.min(Number(v), 1000) }))} />
-              </div>
+      {/* ════════════ OVERVIEW ════════════ */}
+      {activeTab === 'overview' && (
+        <div>
+          <Card style={{ marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Target Progress</span>
+              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 16, color: meetsTarget ? '#D4AF37' : '#f87171' }}>{Math.round(progressPct)}%</span>
             </div>
-            <SLabel>Duration</SLabel>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[1, 2, 3].map(d => (
-                <button key={d} type="button" onClick={() => update(s => ({ ...s, eventDays: d }))} style={{
-                  flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12,
-                  fontFamily: 'var(--font-montserrat)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s',
-                  background: state.eventDays === d ? 'linear-gradient(135deg, #C21818, #8B0000)' : 'rgba(255,255,255,0.05)',
-                  color: state.eventDays === d ? '#fff' : 'rgba(255,255,255,0.4)',
-                  boxShadow: state.eventDays === d ? '0 4px 12px rgba(194,24,24,0.3)' : 'none',
-                }}>
-                  {d} Day{d > 1 ? 's' : ''}
-                </button>
-              ))}
+            <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
+              <div style={{ height: '100%', borderRadius: 3, transition: 'width 0.4s', width: `${progressPct}%`, background: meetsTarget ? 'linear-gradient(90deg, #D4AF37, #F0CC55)' : 'linear-gradient(90deg, #C21818, #ff4444)' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>₹0</span>
+              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>{fmt(state.targetEarnings)}</span>
             </div>
           </Card>
 
-          {/* Brand Partners */}
+          {/* Quick stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginBottom: 12 }}>
+            <StatBox label="Total Players" value={String(m.totalPlayers)} />
+            <StatBox label="Event Days" value={String(state.eventDays)} />
+            <StatBox label="Partners" value={String(state.brandPartners.length + state.communityPartners.length)} />
+            <StatBox label="RCC Earnings" value={fmt(m.rrcEarnings)} color={meetsTarget ? '#D4AF37' : '#f87171'} />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 12 }}>
+            {/* Revenue */}
+            <Card style={{ marginBottom: 0 }}>
+              <SectionTitle>Revenue Breakdown</SectionTitle>
+              <MetaRow label="Brand Partnerships" value={fmt(m.brandRev)} />
+              <MetaRow label="Community Partnerships" value={fmt(m.commRev)} />
+              <MetaRow label={`Player Fees (${m.totalPlayers} players)`} value={fmt(m.playerFeeRev)} />
+              <MetaRow label="Registration Fees" value={fmt(m.regFeeRev)} />
+              {m.sponsorRev > 0 && <MetaRow label="Paid Sponsor" value={fmt(m.sponsorRev)} />}
+              {m.barterVal > 0 && <MetaRow label="Barter Value" value={fmt(m.barterVal)} />}
+              {m.vendorRev > 0 && <MetaRow label={`Vendor Stalls (${state.vendorStalls.count})`} value={fmt(m.vendorRev)} />}
+              {m.sundownerRev > 0 && <MetaRow label="Sundowner" value={fmt(m.sundownerRev)} />}
+              <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total Revenue</span>
+                <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 18, color: '#4ade80' }}>{fmt(m.totalRevenue)}</span>
+              </div>
+            </Card>
+
+            {/* Costs */}
+            <Card style={{ marginBottom: 0 }}>
+              <SectionTitle>Cost Breakdown</SectionTitle>
+              {state.costs.oneTime.map(item => <MetaRow key={item.id} label={item.label} value={fmt(item.amount)} />)}
+              {state.costs.perDay.map(item => <MetaRow key={item.id} label={`${item.label} ×${state.eventDays}`} value={fmt(item.amount * state.eventDays)} />)}
+              <MetaRow label={`Contingency (${state.costs.contingencyPct}%)`} value={fmt(m.contingAmt)} />
+              <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total Costs</span>
+                <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 18, color: '#f87171' }}>{fmt(m.totalCosts)}</span>
+              </div>
+            </Card>
+
+            {/* Earnings summary */}
+            <Card style={{ marginBottom: 0, background: meetsTarget ? 'rgba(212,175,55,0.05)' : 'rgba(194,24,24,0.05)', border: meetsTarget ? '1px solid rgba(212,175,55,0.2)' : '1px solid rgba(194,24,24,0.2)' }}>
+              <SectionTitle>Earnings Summary</SectionTitle>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '12px' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Gross Surplus</div>
+                  <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 18, color: m.grossSurplus >= 0 ? '#4ade80' : '#f87171' }}>{fmt(m.grossSurplus)}</div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '12px' }}>
+                  <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Management Fee</div>
+                  <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 18, color: '#D4AF37' }}>{fmt(m.mgmtFee)}</div>
+                </div>
+              </div>
+              <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>RCC Earnings</span>
+                <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 22, color: meetsTarget ? '#D4AF37' : '#f87171' }}>{fmt(m.rrcEarnings)}</span>
+              </div>
+              <div style={{ marginTop: 6, textAlign: 'right', fontSize: 11, color: meetsTarget ? 'rgba(212,175,55,0.6)' : 'rgba(248,113,113,0.6)' }}>
+                {meetsTarget ? `+ ${fmt(m.rrcEarnings - state.targetEarnings)} above target` : `${fmt(state.targetEarnings - m.rrcEarnings)} below target`}
+              </div>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* ════════════ PARTNERS ════════════ */}
+      {activeTab === 'partners' && (
+        <div>
           <Card>
             <SectionTitle>Brand Partners ({state.brandPartners.length})</SectionTitle>
             {state.brandPartners.map(p => (
@@ -515,8 +629,6 @@ export default function TournamentPlannerPage() {
             ))}
             <AddBtn onClick={addBP}>Add Brand Partner</AddBtn>
           </Card>
-
-          {/* Community Partners */}
           <Card>
             <SectionTitle>Community Partners ({state.communityPartners.length})</SectionTitle>
             {state.communityPartners.map(p => (
@@ -524,7 +636,12 @@ export default function TournamentPlannerPage() {
             ))}
             <AddBtn onClick={addCP}>Add Community Partner</AddBtn>
           </Card>
+        </div>
+      )}
 
+      {/* ════════════ FINANCE ════════════ */}
+      {activeTab === 'finance' && (
+        <div>
           {/* Sponsorship */}
           <Card>
             <SectionTitle>Sponsorship</SectionTitle>
@@ -672,97 +789,199 @@ export default function TournamentPlannerPage() {
             </div>
           </Card>
         </div>
+      )}
 
-        {/* ── RIGHT: live results ── */}
-        <div style={{ flex: 1, minWidth: 0, position: 'sticky', top: 112, maxHeight: 'calc(100vh - 130px)', overflowY: 'auto', paddingRight: 4 }}>
-
-          {/* Target progress */}
-          <Card style={{ marginBottom: 12 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Target Progress</span>
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 16, color: meetsTarget ? '#D4AF37' : '#f87171' }}>{Math.round(progressPct)}%</span>
-            </div>
-            <div style={{ height: 6, background: 'rgba(255,255,255,0.06)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
-              <div style={{ height: '100%', borderRadius: 3, transition: 'width 0.4s', width: `${progressPct}%`, background: meetsTarget ? 'linear-gradient(90deg, #D4AF37, #F0CC55)' : 'linear-gradient(90deg, #C21818, #ff4444)' }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>₹0</span>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: 11 }}>{fmt(state.targetEarnings)}</span>
-            </div>
-          </Card>
-
-          {/* Revenue */}
-          <Card style={{ marginBottom: 12 }}>
-            <SectionTitle>Revenue Breakdown</SectionTitle>
-            <MetaRow label="Brand Partnerships" value={fmt(m.brandRev)} />
-            <MetaRow label="Community Partnerships" value={fmt(m.commRev)} />
-            <MetaRow label={`Player Fees (${m.totalPlayers} players)`} value={fmt(m.playerFeeRev)} />
-            <MetaRow label="Registration Fees" value={fmt(m.regFeeRev)} />
-            {m.sponsorRev > 0 && <MetaRow label="Paid Sponsor" value={fmt(m.sponsorRev)} />}
-            {m.barterVal > 0 && <MetaRow label="Barter Value" value={fmt(m.barterVal)} />}
-            {m.vendorRev > 0 && <MetaRow label={`Vendor Stalls (${state.vendorStalls.count})`} value={fmt(m.vendorRev)} />}
-            {m.sundownerRev > 0 && <MetaRow label="Sundowner" value={fmt(m.sundownerRev)} />}
-            <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total Revenue</span>
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 18, color: '#4ade80' }}>{fmt(m.totalRevenue)}</span>
-            </div>
-          </Card>
-
-          {/* Costs */}
-          <Card style={{ marginBottom: 12 }}>
-            <SectionTitle>Cost Breakdown</SectionTitle>
-            {state.costs.oneTime.map(item => <MetaRow key={item.id} label={item.label} value={fmt(item.amount)} />)}
-            {state.costs.perDay.map(item => <MetaRow key={item.id} label={`${item.label} ×${state.eventDays}`} value={fmt(item.amount * state.eventDays)} />)}
-            <MetaRow label={`Contingency (${state.costs.contingencyPct}%)`} value={fmt(m.contingAmt)} />
-            <div style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 12, color: 'rgba(255,255,255,0.5)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total Costs</span>
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 18, color: '#f87171' }}>{fmt(m.totalCosts)}</span>
-            </div>
-          </Card>
-
-          {/* Earnings summary */}
-          <Card style={{ background: meetsTarget ? 'rgba(212,175,55,0.05)' : 'rgba(194,24,24,0.05)', border: meetsTarget ? '1px solid rgba(212,175,55,0.2)' : '1px solid rgba(194,24,24,0.2)', marginBottom: 12 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
-              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '12px' }}>
-                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Gross Surplus</div>
-                <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 18, color: m.grossSurplus >= 0 ? '#4ade80' : '#f87171' }}>{fmt(m.grossSurplus)}</div>
-              </div>
-              <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 8, padding: '12px' }}>
-                <div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 10, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Management Fee</div>
-                <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 18, color: '#D4AF37' }}>{fmt(m.mgmtFee)}</div>
-              </div>
-            </div>
-            <div style={{ borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.08em', textTransform: 'uppercase' }}>RCC Earnings</span>
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 22, color: meetsTarget ? '#D4AF37' : '#f87171' }}>{fmt(m.rrcEarnings)}</span>
-            </div>
-            <div style={{ marginTop: 6, textAlign: 'right', fontSize: 11, color: meetsTarget ? 'rgba(212,175,55,0.6)' : 'rgba(248,113,113,0.6)' }}>
-              {meetsTarget ? `↑ ${fmt(m.rrcEarnings - state.targetEarnings)} above target` : `↓ ${fmt(state.targetEarnings - m.rrcEarnings)} below target`}
-            </div>
-          </Card>
-
-          {/* Prize distribution */}
-          <Card>
-            <SectionTitle>Prize Distribution</SectionTitle>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 12 }}>
-              {[
-                { pos: '1st', pct: 0.56, color: '#D4AF37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)' },
-                { pos: '2nd', pct: 0.33, color: 'rgba(255,255,255,0.7)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.1)' },
-                { pos: '3rd', pct: 0.11, color: '#CD7F32', bg: 'rgba(205,127,50,0.08)', border: 'rgba(205,127,50,0.2)' },
-              ].map(({ pos, pct, color, bg, border }) => (
-                <div key={pos} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 8, padding: '10px 0', textAlign: 'center' }}>
-                  <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 14, color }}>{pos}</div>
-                  <div style={{ fontWeight: 700, fontSize: 12, color: '#fff', marginTop: 3 }}>{fmt(Math.round(m.prizePool * pct / 1000) * 1000)}</div>
+      {/* ════════════ PLAYERS ════════════ */}
+      {activeTab === 'players' && (
+        <div>
+          <PanelHeader>Confirmed Player Roster</PanelHeader>
+          {state.communityPartners.length === 0 && (
+            <Card><div style={{ color: 'rgba(255,255,255,0.35)', fontSize: 13 }}>No community partners yet. Add some in the Partners tab.</div></Card>
+          )}
+          {state.communityPartners.map(p => {
+            const maxPlayers = p.pairsPerPartner * 2;
+            return (
+              <Card key={p.id}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                  <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 14, color: '#fff' }}>{p.name || 'Unnamed Partner'}</div>
+                  <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 12, color: '#D4AF37' }}>{p.confirmedPlayers}/{maxPlayers} confirmed</span>
                 </div>
-              ))}
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total Prize Pool</span>
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 14, color: '#fff' }}>{fmt(m.prizePool)}</span>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: 10 }}>
+                  {Array.from({ length: p.pairsPerPartner }).map((_, i) => {
+                    const filled = (i + 1) * 2 <= p.confirmedPlayers;
+                    const partial = !filled && i * 2 < p.confirmedPlayers;
+                    const inPair = filled ? 2 : partial ? p.confirmedPlayers - i * 2 : 0;
+                    return (
+                      <div key={i} style={{
+                        background: filled ? 'rgba(212,175,55,0.08)' : 'rgba(255,255,255,0.03)',
+                        border: `1px solid ${filled ? 'rgba(212,175,55,0.25)' : 'rgba(255,255,255,0.07)'}`,
+                        borderRadius: 10, padding: '12px 14px',
+                      }}>
+                        <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 12, color: filled ? '#D4AF37' : 'rgba(255,255,255,0.6)' }}>Pair {i + 1}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>{inPair} player{inPair !== 1 ? 's' : ''}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            );
+          })}
+          <Card style={{ background: 'rgba(212,175,55,0.05)', border: '1px solid rgba(212,175,55,0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Total Confirmed Players</span>
+              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 22, color: '#D4AF37' }}>{m.totalPlayers}</span>
             </div>
           </Card>
         </div>
-      </div>
+      )}
+
+      {/* ════════════ SCHEDULE ════════════ */}
+      {activeTab === 'schedule' && (
+        <div>
+          <PanelHeader>Event Timeline ({state.eventDays} day{state.eventDays > 1 ? 's' : ''})</PanelHeader>
+          {state.schedule.filter(d => d.day <= state.eventDays).map(d => (
+            <Card key={d.day}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(194,24,24,0.12)', border: '1px solid rgba(194,24,24,0.3)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 16, color: '#C21818' }}>{d.day}</div>
+                <div style={{ flex: 1 }}>
+                  <SLabel>Estimated Date</SLabel>
+                  <SInput type="date" value={d.date} onChange={v => setSchedule(d.day, { date: v })} />
+                </div>
+              </div>
+              <SLabel>Per-Day Costs (this day)</SLabel>
+              <div style={{ marginBottom: 12 }}>
+                {state.costs.perDay.map(c => <MetaRow key={c.id} label={c.label} value={fmt(c.amount)} />)}
+                <div style={{ marginTop: 6, paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 12, fontWeight: 700 }}>Day total</span>
+                  <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 13, color: '#f87171' }}>{fmt(state.costs.perDay.reduce((a, c) => a + c.amount, 0))}</span>
+                </div>
+              </div>
+              <SLabel>Notes</SLabel>
+              <textarea value={d.notes} onChange={e => setSchedule(d.day, { notes: e.target.value })} placeholder="Schedule notes for this day..."
+                style={{ ...inp, minHeight: 64, resize: 'vertical' }}
+                onFocus={e => (e.currentTarget.style.borderColor = 'rgba(212,175,55,0.45)')}
+                onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}
+              />
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* ════════════ PRIZES ════════════ */}
+      {activeTab === 'prizes' && (
+        <div>
+          <Card>
+            <SectionTitle>Prize Distribution</SectionTitle>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 20 }}>
+              {([
+                { pos: '1st', key: 'first' as const, color: '#D4AF37', bg: 'rgba(212,175,55,0.08)', border: 'rgba(212,175,55,0.2)' },
+                { pos: '2nd', key: 'second' as const, color: 'rgba(255,255,255,0.7)', bg: 'rgba(255,255,255,0.04)', border: 'rgba(255,255,255,0.1)' },
+                { pos: '3rd', key: 'third' as const, color: '#CD7F32', bg: 'rgba(205,127,50,0.08)', border: 'rgba(205,127,50,0.2)' },
+              ]).map(({ pos, key, color, bg, border }) => (
+                <div key={pos} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 8, padding: '14px 0', textAlign: 'center' }}>
+                  <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 16, color }}>{pos}</div>
+                  <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginTop: 4 }}>{state.prizeDistribution[key]}%</div>
+                  <div style={{ fontWeight: 700, fontSize: 13, color: '#fff', marginTop: 4 }}>{fmt(Math.round(m.prizePool * state.prizeDistribution[key] / 100 / 1000) * 1000)}</div>
+                </div>
+              ))}
+            </div>
+            {([
+              { label: '1st Place', key: 'first' as const, accent: '#D4AF37' },
+              { label: '2nd Place', key: 'second' as const, accent: '#9ca3af' },
+              { label: '3rd Place', key: 'third' as const, accent: '#CD7F32' },
+            ]).map(({ label, key, accent }) => (
+              <div key={key} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <SLabel>{label}</SLabel>
+                  <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 13, color: '#fff' }}>{state.prizeDistribution[key]}%</span>
+                </div>
+                <input type="range" min={0} max={100} step={1} value={state.prizeDistribution[key]}
+                  onChange={e => setPrizePct(key, Number(e.target.value))}
+                  style={{ width: '100%', accentColor: accent }}
+                />
+              </div>
+            ))}
+            <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+              <span style={{ color: 'rgba(255,255,255,0.35)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Total Prize Pool</span>
+              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 16, color: '#fff' }}>{fmt(m.prizePool)}</span>
+            </div>
+            <div style={{ marginTop: 6, fontSize: 11, color: 'rgba(255,255,255,0.3)' }}>
+              Prize pool is driven by the {'"'}Prize Pool{'"'} one-time cost in the Finance tab. Percentages always total 100%.
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ════════════ SETTINGS ════════════ */}
+      {activeTab === 'settings' && (
+        <div>
+          <Card>
+            <SectionTitle>Event Settings</SectionTitle>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 10 }}>
+              <div style={{ gridColumn: '1/-1' }}>
+                <SLabel>Event Name</SLabel>
+                <SInput value={state.eventName} onChange={v => update(s => ({ ...s, eventName: v }))} />
+              </div>
+              <div>
+                <SLabel>Target Earnings (₹)</SLabel>
+                <SInput type="number" value={state.targetEarnings} onChange={v => update(s => ({ ...s, targetEarnings: Number(v) }))} />
+              </div>
+              <div>
+                <SLabel>Player Fee (max ₹1,000)</SLabel>
+                <SInput type="number" value={state.playerFee} onChange={v => update(s => ({ ...s, playerFee: Math.min(Number(v), 1000) }))} />
+              </div>
+            </div>
+            <SLabel>Duration</SLabel>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {[1, 2, 3].map(d => (
+                <button key={d} type="button" onClick={() => update(s => ({ ...s, eventDays: d }))} style={{
+                  flex: 1, padding: '8px 0', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 12,
+                  fontFamily: 'var(--font-montserrat)', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', transition: 'all 0.15s',
+                  background: state.eventDays === d ? 'linear-gradient(135deg, #C21818, #8B0000)' : 'rgba(255,255,255,0.05)',
+                  color: state.eventDays === d ? '#fff' : 'rgba(255,255,255,0.4)',
+                  boxShadow: state.eventDays === d ? '0 4px 12px rgba(194,24,24,0.3)' : 'none',
+                }}>
+                  {d} Day{d > 1 ? 's' : ''}
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          <Card>
+            <SectionTitle>Mode</SectionTitle>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {([
+                { key: 'financial' as Mode, label: '💰 Financial' },
+                { key: 'tournament' as Mode, label: '🏸 Tournament' },
+                { key: 'casual' as Mode, label: '🎮 Casual' },
+              ]).map(opt => {
+                const on = state.mode === opt.key;
+                return (
+                  <button key={opt.key} type="button" onClick={() => setMode(opt.key)} style={{
+                    padding: '9px 16px', borderRadius: 8, cursor: 'pointer', fontSize: 12,
+                    fontFamily: 'var(--font-montserrat)', fontWeight: 700,
+                    border: on ? '1px solid rgba(212,175,55,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                    background: on ? 'rgba(212,175,55,0.12)' : 'rgba(255,255,255,0.03)',
+                    color: on ? '#D4AF37' : 'rgba(255,255,255,0.45)',
+                  }}>{opt.label}</button>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card style={{ background: 'rgba(194,24,24,0.05)', border: '1px solid rgba(194,24,24,0.2)' }}>
+            <SectionTitle>Danger Zone</SectionTitle>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>Reset all fields back to default values (keeps the event name).</div>
+              <button type="button" onClick={resetDefaults} style={{
+                padding: '9px 16px', borderRadius: 8, cursor: 'pointer', flexShrink: 0,
+                border: '1px solid rgba(194,24,24,0.4)', background: 'rgba(194,24,24,0.15)', color: '#f87171',
+                fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, letterSpacing: '0.1em', textTransform: 'uppercase',
+              }}>Reset to Defaults</button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
