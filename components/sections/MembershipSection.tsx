@@ -136,7 +136,7 @@ export default function MembershipSection() {
                     width: '100%', padding: '12px 16px', background: '#111118',
                     border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px',
                     color: '#e8e8ec', fontFamily: 'var(--font-inter)', fontSize: '14px',
-                    outline: 'none', cursor: 'pointer',
+                    outline: 'none', cursor: 'pointer', colorScheme: 'dark',
                   }}
                 >
                   <option value="beginner">Beginner</option>

@@ -706,7 +706,7 @@ export default function MembershipPage() {
                       backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888899' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E")`,
                       backgroundRepeat: 'no-repeat',
                       backgroundPosition: 'right 14px center',
-                      paddingRight: 40,
+                      paddingRight: 40, colorScheme: 'dark',
                     }}
                     onFocus={e => (e.currentTarget.style.borderColor = 'rgba(212,175,55,0.5)')}
                     onBlur={e => (e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)')}

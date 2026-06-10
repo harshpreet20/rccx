@@ -48,7 +48,7 @@ function hasOptions(type: FieldType) {
 const inp: React.CSSProperties = {
   width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
   borderRadius: 8, padding: '9px 12px', color: '#fff', fontSize: 13, outline: 'none',
-  boxSizing: 'border-box', fontFamily: 'var(--font-inter)',
+  boxSizing: 'border-box', fontFamily: 'var(--font-inter)', colorScheme: 'dark',
 };
 
 const inpFocus = 'rgba(212,175,55,0.45)';

@@ -188,6 +188,7 @@ export default function PublicFormPage() {
                     value={(values[field.label] as string) || ''}
                     onChange={(e) => setValue(field.label, e.target.value)}
                     className={inputClass(field.label)}
+                    style={{ colorScheme: 'dark' }}
                   >
                     <option value="">{field.placeholder || 'Select an option'}</option>
                     {(field.options || []).map((opt, i) => (
