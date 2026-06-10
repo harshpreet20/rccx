@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Loader2, CheckCircle2, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -228,6 +228,99 @@ const S = {
   },
 };
 
+function CustomSelect({ value, onChange, options, placeholder, hasError }: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+  placeholder: string;
+  hasError: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        style={{
+          width: '100%',
+          background: 'rgba(255,255,255,0.04)',
+          border: `1px solid ${hasError ? '#C21818' : open ? 'rgba(194,24,24,0.5)' : 'rgba(255,255,255,0.1)'}`,
+          borderRadius: 10,
+          padding: '12px 36px 12px 14px',
+          color: value ? '#fff' : 'rgba(255,255,255,0.35)',
+          fontSize: 14,
+          textAlign: 'left',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          outline: 'none',
+          transition: 'border-color 0.2s',
+        }}
+      >
+        <span>{value || placeholder}</span>
+        <ChevronDown
+          size={15}
+          style={{
+            color: 'rgba(255,255,255,0.4)',
+            transform: open ? 'rotate(180deg)' : 'none',
+            transition: 'transform 0.2s',
+            flexShrink: 0,
+          }}
+        />
+      </button>
+      {open && (
+        <div style={{
+          position: 'absolute',
+          top: 'calc(100% + 6px)',
+          left: 0,
+          right: 0,
+          background: '#0d1120',
+          border: '1px solid rgba(255,255,255,0.12)',
+          borderRadius: 10,
+          overflow: 'hidden',
+          zIndex: 100,
+          boxShadow: '0 12px 40px rgba(0,0,0,0.6)',
+        }}>
+          {options.map((opt, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => { onChange(opt); setOpen(false); }}
+              style={{
+                width: '100%',
+                padding: '11px 14px',
+                background: value === opt ? 'rgba(194,24,24,0.12)' : 'transparent',
+                border: 'none',
+                borderBottom: i < options.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                color: value === opt ? '#fff' : 'rgba(255,255,255,0.7)',
+                fontSize: 14,
+                textAlign: 'left',
+                cursor: 'pointer',
+                transition: 'background 0.15s',
+              }}
+              onMouseEnter={(e) => { if (value !== opt) (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.04)'; }}
+              onMouseLeave={(e) => { if (value !== opt) (e.currentTarget as HTMLButtonElement).style.background = 'transparent'; }}
+            >
+              {opt}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function PublicFormPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -404,19 +497,13 @@ export default function PublicFormPage() {
                     style={{ ...getInputStyle(field.label), resize: 'none' as const }}
                   />
                 ) : field.type === 'select' ? (
-                  <div style={S.selectWrap}>
-                    <select
-                      value={(values[field.label] as string) || ''}
-                      onChange={(e) => setValue(field.label, e.target.value)}
-                      style={getSelectStyle(field.label)}
-                    >
-                      <option value="">{field.placeholder || 'Select an option'}</option>
-                      {(field.options || []).map((opt, i) => (
-                        <option key={i} value={opt}>{opt}</option>
-                      ))}
-                    </select>
-                    <ChevronDown size={15} style={S.selectIcon} />
-                  </div>
+                  <CustomSelect
+                    value={(values[field.label] as string) || ''}
+                    onChange={(v) => setValue(field.label, v)}
+                    options={field.options || []}
+                    placeholder={field.placeholder || 'Select an option'}
+                    hasError={!!errors[field.label]}
+                  />
                 ) : field.type === 'radio' ? (
                   <div style={S.optionGroup}>
                     {(field.options || []).map((opt, i) => (
