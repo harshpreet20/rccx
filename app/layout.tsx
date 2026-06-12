@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { Montserrat, Inter, Bebas_Neue, Dancing_Script, Cormorant_Garamond, DM_Mono, Playfair_Display } from 'next/font/google';
+import { Montserrat, Inter, Bebas_Neue, Dancing_Script, Cormorant_Garamond, DM_Mono, Playfair_Display, Anton, Archivo } from 'next/font/google';
 import './globals.css';
 
 const montserrat = Montserrat({
@@ -52,6 +52,21 @@ const playfairDisplay = Playfair_Display({
   display: 'swap',
 });
 
+const anton = Anton({
+  variable: '--font-anton',
+  subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
+});
+
+const archivo = Archivo({
+  variable: '--font-archivo',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: "Racquets Club Community | Delhi's Invite-Only Badminton Community",
   description:
@@ -68,7 +83,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${montserrat.variable} ${inter.variable} ${bebasNeue.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${dmMono.variable} ${playfairDisplay.variable}`}
+      className={`${montserrat.variable} ${inter.variable} ${bebasNeue.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${dmMono.variable} ${playfairDisplay.variable} ${anton.variable} ${archivo.variable}`}
     >
       <head>
         <link rel="preload" href="/athlete.png" as="image" />

@@ -190,7 +190,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           opacity: 0,
         }}>
           <span style={{
-            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontFamily: 'var(--font-anton), Impact, sans-serif',
             fontSize: 88,
             fontWeight: 600,
             color: '#C9A84C',
@@ -210,7 +210,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           transform: 'translateX(-50%)',
           width: '100%',
           textAlign: 'center',
-          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontFamily: 'var(--font-archivo), Arial, sans-serif',
           fontSize: 10,
           letterSpacing: '0.18em',
           textTransform: 'uppercase',
@@ -231,7 +231,7 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
           whiteSpace: 'nowrap',
         }}>
           <div style={{
-            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontFamily: 'var(--font-archivo), Arial, sans-serif',
             fontSize: 14,
             letterSpacing: '0.25em',
             color: '#9B2335',

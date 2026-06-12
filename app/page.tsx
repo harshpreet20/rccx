@@ -12,6 +12,7 @@ import TournamentsRCC from '@/components/sections/TournamentsRCC';
 import MemberRoster from '@/components/sections/MemberRoster';
 import ActivityFeed from '@/components/sections/ActivityFeed';
 import FooterRCC from '@/components/layout/FooterRCC';
+import ScoreTicker from '@/components/ui/ScoreTicker';
 
 // Existing components kept for compatibility
 import ChatBot from '@/components/ui/ChatBot';
@@ -37,6 +38,7 @@ export default function Home() {
 
         <NavbarRCC />
         <HeroRCC />
+        <ScoreTicker />
         <AboutRCC />
         <TournamentInvite />
         <TournamentsRCC />

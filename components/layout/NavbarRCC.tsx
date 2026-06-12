@@ -62,7 +62,7 @@ export default function NavbarRCC() {
             justifyContent: 'center',
           }}>
             <span style={{
-              fontFamily: 'var(--font-cormorant), Georgia, serif',
+              fontFamily: 'var(--font-archivo), Arial, sans-serif',
               fontSize: 16,
               fontWeight: 600,
               color: '#C9A84C',
@@ -71,7 +71,7 @@ export default function NavbarRCC() {
           </div>
           <div className="hidden sm:block">
             <div style={{
-              fontFamily: 'var(--font-cormorant), Georgia, serif',
+              fontFamily: 'var(--font-archivo), Arial, sans-serif',
               fontSize: 13,
               fontWeight: 600,
               color: '#F5F0E8',
@@ -100,7 +100,7 @@ export default function NavbarRCC() {
               key={link.label}
               href={link.href}
               style={{
-                fontFamily: 'var(--font-cormorant), Georgia, serif',
+                fontFamily: 'var(--font-archivo), Arial, sans-serif',
                 fontSize: 14,
                 letterSpacing: '0.12em',
                 color: pathname === link.href ? '#C9A84C' : 'rgba(245,240,232,0.7)',
@@ -194,7 +194,7 @@ export default function NavbarRCC() {
             href={link.href}
             onClick={() => setMenuOpen(false)}
             style={{
-              fontFamily: 'var(--font-cormorant), Georgia, serif',
+              fontFamily: 'var(--font-archivo), Arial, sans-serif',
               fontSize: 22,
               color: pathname === link.href ? '#C9A84C' : 'rgba(245,240,232,0.7)',
               textDecoration: 'none',

@@ -105,7 +105,7 @@ export default function TournamentInvite() {
 
         {/* YOU ARE INVITED */}
         <div className="invite-item" style={{
-          fontFamily: 'var(--font-playfair), Georgia, serif',
+          fontFamily: 'var(--font-archivo), Arial, sans-serif',
           fontStyle: 'italic',
           fontSize: 13,
           letterSpacing: '0.3em',
@@ -121,7 +121,7 @@ export default function TournamentInvite() {
 
         {/* Main title */}
         <h2 className="invite-item" style={{
-          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontFamily: 'var(--font-anton), Impact, sans-serif',
           fontSize: 'clamp(48px, 8vw, 88px)',
           fontWeight: 600,
           lineHeight: 1.0,
@@ -135,7 +135,7 @@ export default function TournamentInvite() {
 
         {/* Subtitle */}
         <div className="invite-item" style={{
-          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontFamily: 'var(--font-archivo), Arial, sans-serif',
           fontSize: 18,
           letterSpacing: '0.18em',
           color: '#C8BFA8',
@@ -148,7 +148,7 @@ export default function TournamentInvite() {
 
         {/* Tagline */}
         <p className="invite-item" style={{
-          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontFamily: 'var(--font-archivo), Arial, sans-serif',
           fontStyle: 'italic',
           fontSize: 'clamp(18px, 2.5vw, 26px)',
           color: '#F5F0E8',

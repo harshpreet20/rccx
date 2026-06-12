@@ -88,7 +88,7 @@ export default function MemberRoster() {
             The Roster
           </div>
           <h2 className="text-h2" style={{
-            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontFamily: 'var(--font-archivo), Arial, sans-serif',
             color: '#F5F0E8',
             marginBottom: 16,
           }}>
@@ -141,7 +141,7 @@ export default function MemberRoster() {
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 20px',
-                  fontFamily: 'var(--font-cormorant), Georgia, serif',
+                  fontFamily: 'var(--font-archivo), Arial, sans-serif',
                   fontSize: 24,
                   color: '#C9A84C',
                   fontWeight: 600,
@@ -151,7 +151,7 @@ export default function MemberRoster() {
 
                 {/* Name */}
                 <div style={{
-                  fontFamily: 'var(--font-cormorant), Georgia, serif',
+                  fontFamily: 'var(--font-archivo), Arial, sans-serif',
                   fontSize: 20,
                   color: '#F5F0E8',
                   textAlign: 'center',

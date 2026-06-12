@@ -86,7 +86,7 @@ export default function ActivityFeed() {
             The Chronicle
           </div>
           <h2 className="text-h2" style={{
-            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontFamily: 'var(--font-archivo), Arial, sans-serif',
             color: '#F5F0E8',
             marginBottom: 16,
           }}>
@@ -128,7 +128,7 @@ export default function ActivityFeed() {
 
               {/* Title */}
               <div style={{
-                fontFamily: 'var(--font-cormorant), Georgia, serif',
+                fontFamily: 'var(--font-archivo), Arial, sans-serif',
                 fontSize: 22,
                 color: '#F5F0E8',
                 fontWeight: 500,
@@ -140,7 +140,7 @@ export default function ActivityFeed() {
 
               {/* Players */}
               <div style={{
-                fontFamily: 'var(--font-cormorant), Georgia, serif',
+                fontFamily: 'var(--font-archivo), Arial, sans-serif',
                 fontVariant: 'small-caps',
                 fontSize: 13,
                 color: '#C9A84C',

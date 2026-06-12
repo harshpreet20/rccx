@@ -126,7 +126,7 @@ export default function AboutRCC() {
           <h2 className="text-h2 reveal-item" style={{
             color: '#F5F0E8',
             marginBottom: 28,
-            fontFamily: 'var(--font-cormorant), Georgia, serif',
+            fontFamily: 'var(--font-archivo), Arial, sans-serif',
           }}>
             Not Just a Community.
             <br />
@@ -146,7 +146,7 @@ export default function AboutRCC() {
           </p>
 
           <p className="reveal-item" style={{
-            fontFamily: 'var(--font-playfair), Georgia, serif',
+            fontFamily: 'var(--font-archivo), Arial, sans-serif',
             fontStyle: 'italic',
             fontSize: 20,
             lineHeight: 1.6,

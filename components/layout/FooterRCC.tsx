@@ -86,7 +86,7 @@ export default function FooterRCC() {
           }}>
             {/* Crest monogram */}
             <span style={{
-              fontFamily: 'var(--font-cormorant), Georgia, serif',
+              fontFamily: 'var(--font-archivo), Arial, sans-serif',
               fontSize: 36,
               fontWeight: 600,
               color: '#C9A84C',
@@ -121,7 +121,7 @@ export default function FooterRCC() {
                   key={link.label}
                   href={link.href}
                   style={{
-                    fontFamily: 'var(--font-cormorant), Georgia, serif',
+                    fontFamily: 'var(--font-archivo), Arial, sans-serif',
                     fontSize: 16,
                     color: '#C8BFA8',
                     textDecoration: 'none',
@@ -164,7 +164,7 @@ export default function FooterRCC() {
         </div>
 
         <div style={{
-          fontFamily: 'var(--font-cormorant), Georgia, serif',
+          fontFamily: 'var(--font-archivo), Arial, sans-serif',
           fontSize: 14,
           color: '#9B2335',
           letterSpacing: '0.25em',
