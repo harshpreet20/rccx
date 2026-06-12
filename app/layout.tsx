@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import { Montserrat, Inter, Bebas_Neue, Dancing_Script } from 'next/font/google';
+import { Montserrat, Inter, Bebas_Neue, Dancing_Script, Cormorant_Garamond, DM_Mono, Playfair_Display } from 'next/font/google';
 import './globals.css';
-import SupportModal from '@/components/ui/SupportModal';
 
 const montserrat = Montserrat({
   variable: '--font-montserrat',
@@ -30,27 +29,38 @@ const dancingScript = Dancing_Script({
   display: 'swap',
 });
 
+const cormorantGaramond = Cormorant_Garamond({
+  variable: '--font-cormorant',
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
+const dmMono = DM_Mono({
+  variable: '--font-dm-mono',
+  subsets: ['latin'],
+  weight: ['300', '400', '500'],
+  display: 'swap',
+});
+
+const playfairDisplay = Playfair_Display({
+  variable: '--font-playfair',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800', '900'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: "Racquets Club Community | Badminton Community in West Delhi – Paschim Vihar & Janakpuri",
+  title: "Racquets Club Community | Delhi's Invite-Only Badminton Community",
   description:
-    "RCC is West Delhi's invite-only badminton community. We play at JLDAV School Paschim Vihar & DTEA Janakpuri. Tournaments, ladder leagues, and real competitive badminton.",
-  keywords: 'badminton West Delhi, badminton Paschim Vihar, badminton Janakpuri, RCC, Racquets Club Community, invite-only badminton Delhi, badminton club Delhi, JLDAV Paschim Vihar badminton, DTEA Janakpuri badminton, Delhi badminton community',
+    "RCC is Delhi's invite-only badminton community for serious players. Regular games, skill-based matches, tournaments, and real connections.",
+  keywords: 'badminton, Delhi, invite-only, community, RCC, Racquets Club, tournaments, sports',
   openGraph: {
-    title: 'Racquets Club Community (RCC) – West Delhi Badminton',
-    description: "West Delhi's invite-only badminton community. Paschim Vihar & Janakpuri. Smash. Connect. Compete.",
+    title: 'Racquets Club Community (RCC)',
+    description: "Delhi's invite-only badminton community. Smash. Connect. Compete.",
     type: 'website',
-    siteName: 'Racquets Club Community',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Racquets Club Community – West Delhi Badminton',
-    description: "West Delhi's elite invite-only badminton community. JLDAV Paschim Vihar & DTEA Janakpuri.",
-  },
-  other: {
-    'geo.region': 'IN-DL',
-    'geo.placename': 'Paschim Vihar, West Delhi',
-    'geo.position': '28.6741;77.0886',
-    'ICBM': '28.6741, 77.0886',
   },
 };
 
@@ -58,13 +68,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${montserrat.variable} ${inter.variable} ${bebasNeue.variable} ${dancingScript.variable}`}
+      className={`${montserrat.variable} ${inter.variable} ${bebasNeue.variable} ${dancingScript.variable} ${cormorantGaramond.variable} ${dmMono.variable} ${playfairDisplay.variable}`}
     >
       <head>
+        <link rel="preload" href="/athlete.png" as="image" />
       </head>
-      <body className="antialiased bg-[#0a0a0f] text-[#e8e8ec] overflow-x-hidden">
+      <body className="antialiased bg-[#0A1628] text-[#F5F0E8] overflow-x-hidden">
         {children}
-        <SupportModal />
       </body>
     </html>
   );

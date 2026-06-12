@@ -1,35 +1,51 @@
-import Navbar from '@/components/layout/Navbar';
-import Hero from '@/components/sections/Hero';
-import PartnersSection from '@/components/sections/PartnersSection';
-import InstagramFeed from '@/components/sections/InstagramFeed';
-import MembershipSection from '@/components/sections/MembershipSection';
-import PlayerSpotlight from '@/components/sections/PlayerSpotlight';
-import LeaderboardSection from '@/components/sections/LeaderboardSection';
-import CommunityFeed from '@/components/sections/CommunityFeed';
-import TestimonialsSection from '@/components/sections/TestimonialsSection';
-import HowItWorksSection from '@/components/sections/HowItWorksSection';
-import CommunityEthosSection from '@/components/sections/CommunityEthosSection';
-import FAQSection from '@/components/sections/FAQSection';
-import Footer from '@/components/layout/Footer';
+'use client';
+
+import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
+import LoadingScreen from '@/components/layout/LoadingScreen';
+import CustomCursor from '@/components/ui/CustomCursor';
+import NavbarRCC from '@/components/layout/NavbarRCC';
+import HeroRCC from '@/components/sections/HeroRCC';
+import AboutRCC from '@/components/sections/AboutRCC';
+import TournamentInvite from '@/components/sections/TournamentInvite';
+import TournamentsRCC from '@/components/sections/TournamentsRCC';
+import MemberRoster from '@/components/sections/MemberRoster';
+import ActivityFeed from '@/components/sections/ActivityFeed';
+import FooterRCC from '@/components/layout/FooterRCC';
+
+// Existing components kept for compatibility
 import ChatBot from '@/components/ui/ChatBot';
+import SupportModal from '@/components/ui/SupportModal';
 
 export default function Home() {
+  const [loaded, setLoaded] = useState(false);
+  const [sweepKey, setSweepKey] = useState(0);
+
+  useEffect(() => {
+    // Periodic gold sweep
+    const interval = setInterval(() => setSweepKey(k => k + 1), 20000);
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <main>
-      <Navbar />
-      <Hero />
-      <PartnersSection />
-      <InstagramFeed />
-      <HowItWorksSection />
-      <MembershipSection />
-      <PlayerSpotlight />
-      <LeaderboardSection />
-      <CommunityFeed limit={4} />
-      <CommunityEthosSection />
-      <TestimonialsSection />
-      <FAQSection />
-      <Footer />
-      <ChatBot />
-    </main>
+    <>
+      <CustomCursor />
+      {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
+      <div style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.6s ease' }}>
+        {/* Ambient gold sweep */}
+        <div key={sweepKey} className="gold-sweep-overlay" />
+
+        <NavbarRCC />
+        <HeroRCC />
+        <AboutRCC />
+        <TournamentInvite />
+        <TournamentsRCC />
+        <MemberRoster />
+        <ActivityFeed />
+        <FooterRCC />
+        <ChatBot />
+        <SupportModal />
+      </div>
+    </>
   );
 }
