@@ -1,5 +1,15 @@
+import { requireAuth } from './_auth.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
+
+  try {
+    const { role } = await requireAuth(req);
+    if (role !== 'organizer') return res.status(403).json({ error: 'Organizer access required' });
+  } catch (authErr) {
+    return res.status(authErr.status || 401).json({ error: authErr.message });
+  }
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) return res.status(500).json({ error: 'Anthropic API key not configured' });
 
@@ -89,7 +99,7 @@ Generate an HTML report showing investment breakdown, prize ROI scenarios, per-p
         'anthropic-version': '2023-06-01',
       },
       body: JSON.stringify({
-        model: 'claude-opus-4-5',
+        model: 'claude-opus-4-8',
         max_tokens: 4096,
         messages: [{ role: 'user', content: prompts[docType] || prompts.partner_pitch }],
       }),

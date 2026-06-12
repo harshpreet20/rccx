@@ -1,5 +1,14 @@
+import { requireAuth } from './_auth.js';
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end();
+
+  try {
+    const { role } = await requireAuth(req);
+    if (role !== 'organizer') return res.status(403).json({ error: 'Organizer access required' });
+  } catch (authErr) {
+    return res.status(authErr.status || 401).json({ error: authErr.message });
+  }
 
   const anthropicKey = process.env.ANTHROPIC_API_KEY;
   const supabaseUrl = process.env.SUPABASE_URL || 'https://wsucqpunleplgyrrroae.supabase.co';
@@ -28,9 +37,18 @@ export default async function handler(req, res) {
       }),
     });
     const data = await response.json();
-    const knowledgeBase = JSON.parse(data.content[0].text);
+    if (!response.ok) throw new Error(data.error?.message || 'Anthropic API error');
 
-    // Store in Supabase chatbot_knowledge table (already exists)
+    let knowledgeBase;
+    try {
+      const text = data.content[0].text;
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
+      knowledgeBase = JSON.parse(jsonMatch ? jsonMatch[0] : text);
+      if (!Array.isArray(knowledgeBase)) throw new Error('Expected array');
+    } catch(parseErr) {
+      return res.status(500).json({ error: `Invalid response format: ${parseErr.message}` });
+    }
+
     if (supabaseKey) {
       const sbRes = await fetch(`${supabaseUrl}/rest/v1/chatbot_knowledge`, {
         method: 'POST',
@@ -47,6 +65,10 @@ export default async function handler(req, res) {
           source: 'auto_trained',
         }))),
       });
+      if (!sbRes.ok) {
+        const sbErr = await sbRes.json().catch(() => ({}));
+        return res.status(500).json({ error: `Database error: ${sbErr.message || sbRes.status}` });
+      }
     }
 
     res.status(200).json({ success: true, count: knowledgeBase.length });
