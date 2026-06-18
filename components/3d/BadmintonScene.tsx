@@ -255,7 +255,7 @@ export default function BadmintonScene() {
     scene.background = new THREE.Color(NAVY);
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
     camera.position.set(-3, 8, 14);
-    camera.lookAt(0, 1, 0);
+    camera.lookAt(-3, 2.5, -1);
 
     /* Post-processing */
     const composer = new EffectComposer(renderer);
@@ -263,7 +263,7 @@ export default function BadmintonScene() {
     if (!isMobile) {
       const bloom = new UnrealBloomPass(
         new THREE.Vector2(window.innerWidth, window.innerHeight),
-        1.4, 0.65, 0.55
+        1.8, 0.7, 0.45
       );
       composer.addPass(bloom);
     }
@@ -336,25 +336,35 @@ export default function BadmintonScene() {
     /* ─── Shuttlecock ─── */
     const shuttleGroup = buildShuttlecock();
     shuttleGroup.position.copy(SHUTTLE_CURVE.getPoint(0));
+    shuttleGroup.scale.set(2.8, 2.8, 2.8); // scale up for screen visibility
     scene.add(shuttleGroup);
 
-    /* Trail */
-    const TRAIL_LEN = 20;
+    /* Dedicated shuttle highlight — moves with shuttle */
+    const shuttleLight = new THREE.PointLight(GOLD_WARM, 40, 12);
+    shuttleLight.position.copy(shuttleGroup.position);
+    scene.add(shuttleLight);
+
+    /* Trail — pre-populate with arc points so it's visible immediately */
+    const TRAIL_LEN = 24;
     const trailPositions = new Float32Array(TRAIL_LEN * 3);
     const trailGeo = new THREE.BufferGeometry();
     trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
     const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({
-      color: GOLD_WARM, transparent: true, opacity: 0.5,
+      color: GOLD_WARM, transparent: true, opacity: 0.6, linewidth: 2,
     }));
     scene.add(trail);
-    const trailBuffer: THREE.Vector3[] = Array.from({ length: TRAIL_LEN }, () => new THREE.Vector3().copy(shuttleGroup.position));
+    // Pre-fill trail with arc points behind the shuttle so deception arc is visible on load
+    const trailBuffer: THREE.Vector3[] = Array.from({ length: TRAIL_LEN }, (_, i) => {
+      const t = Math.max(0, (i / TRAIL_LEN) * 0.25);
+      return SHUTTLE_CURVE.getPoint(t);
+    });
 
     /* ─── Player ─── */
     scene.add(buildPlayerSilhouette());
 
     /* ─── Camera state ─── */
     let smoothT = 0;
-    const currentLookAt = new THREE.Vector3(0, 1, 0);
+    const currentLookAt = new THREE.Vector3(-3, 2.5, -1);
     let introComplete = false;
     let deceptionTriggered = false;
     let chromAbStrength = 0;
@@ -428,6 +438,12 @@ export default function BadmintonScene() {
 
       // Shuttle idle spin + trail
       shuttleGroup.rotation.y += 0.08;
+      // Continuous hover bob — visible even before scroll
+      shuttleGroup.position.y += Math.sin(t2 * 1.8) * 0.005;
+
+      // Shuttle light follows shuttle
+      shuttleLight.position.copy(shuttleGroup.position);
+      shuttleLight.position.y += 1;
 
       const moved = shuttleGroup.position.distanceTo(prevShuttlePos) > 0.001;
       if (moved) {
