@@ -119,22 +119,22 @@ function buildNet(): THREE.Group {
 function buildShuttlecock(): THREE.Group {
   const group = new THREE.Group();
 
-  // Cork
+  // Cork — gold emissive so it glows even before flood lights
   const cork = new THREE.Mesh(
     new THREE.SphereGeometry(0.18, 16, 12),
-    new THREE.MeshStandardMaterial({ color: 0xf5f0e8, roughness: 0.4, metalness: 0.1 })
+    new THREE.MeshStandardMaterial({ color: 0xf5f0e8, emissive: GOLD, emissiveIntensity: 1.5, roughness: 0.3, metalness: 0.2 })
   );
   group.add(cork);
 
-  // Skirt
+  // Skirt — soft white emissive
   const skirt = new THREE.Mesh(
     new THREE.ConeGeometry(0.45, 0.8, 16, 1, true),
-    new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+    new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 0.5, transparent: true, opacity: 0.9, side: THREE.DoubleSide })
   );
   skirt.position.y = 0.4;
   group.add(skirt);
 
-  // 16 feather fins
+  // 16 feather fins — warm gold emissive
   const N = 16;
   const verts: number[] = [];
   const indices: number[] = [];
@@ -160,7 +160,7 @@ function buildShuttlecock(): THREE.Group {
   featherGeo.computeVertexNormals();
   const feathers = new THREE.Mesh(
     featherGeo,
-    new THREE.MeshStandardMaterial({ color: 0xf5f0e8, side: THREE.DoubleSide, roughness: 0.6 })
+    new THREE.MeshStandardMaterial({ color: 0xf5f0e8, emissive: GOLD_WARM, emissiveIntensity: 0.7, side: THREE.DoubleSide, roughness: 0.5 })
   );
   group.add(feathers);
 
@@ -390,6 +390,55 @@ export default function BadmintonScene() {
     introTL.add(flickerOn(floods[2], 180, 0), '+=0.2');
     introTL.add(flickerOn(floods[3], 180, 0), '-=0.3');
 
+    /* ─── Auto-repeating deception shot animation ─── */
+    const arcT = { value: 0 };
+    let autoDeceptionActive = false;
+
+    const runDeceptionLoop = () => {
+      autoDeceptionActive = true;
+      arcT.value = 0;
+      shuttleGroup.position.copy(SHUTTLE_CURVE.getPoint(0));
+
+      // Pulse court lines gold on smash
+      courtLines.children.forEach((child) => {
+        const mesh = child as THREE.Mesh;
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        gsap.to(mat, { emissiveIntensity: 9, duration: 0.12, yoyo: true, repeat: 3 });
+      });
+      // Boost shuttle light intensity on smash
+      gsap.fromTo(shuttleLight, { intensity: 40 }, { intensity: 120, duration: 0.3, yoyo: true, repeat: 1 });
+
+      gsap.to(arcT, {
+        value: 1,
+        duration: 1.1,
+        ease: 'power2.in',
+        onUpdate: () => {
+          // Only drive auto-arc when scroll hasn't moved past 10%
+          if (scrollProgress.current < 0.1) {
+            const pos = SHUTTLE_CURVE.getPoint(Math.min(arcT.value, 1));
+            shuttleGroup.position.set(pos.x, pos.y, pos.z);
+          }
+        },
+        onComplete: () => {
+          autoDeceptionActive = false;
+          // Return shuttle to start with a smooth reset, then repeat after pause
+          gsap.to(shuttleGroup.position, {
+            x: SHUTTLE_CURVE.getPoint(0).x,
+            y: SHUTTLE_CURVE.getPoint(0).y,
+            z: SHUTTLE_CURVE.getPoint(0).z,
+            duration: 0.6,
+            ease: 'power1.inOut',
+            onComplete: () => {
+              setTimeout(runDeceptionLoop, 2200);
+            },
+          });
+        },
+      });
+    };
+
+    // Start first deception shot 2.5s after load (after intro lights flicker on)
+    const deceptionTimer = setTimeout(runDeceptionLoop, 2500);
+
     /* ─── Animation loop ─── */
     let frameId: number;
     let t2 = 0;
@@ -409,10 +458,12 @@ export default function BadmintonScene() {
         const camPos = CAM_CURVE.getPoint(t);
         camera.position.lerp(camPos, 0.05);
 
-        // Shuttle arc
-        const st = Math.min(t / 0.45, 1);
-        const shuttlePos = SHUTTLE_CURVE.getPoint(st);
-        shuttleGroup.position.lerp(shuttlePos, 0.08);
+        // Shuttle arc — only drive via scroll when user has scrolled past 10%
+        if (!autoDeceptionActive && t > 0.1) {
+          const st = Math.min((t - 0.1) / 0.4, 1);
+          const shuttlePos = SHUTTLE_CURVE.getPoint(st);
+          shuttleGroup.position.lerp(shuttlePos, 0.08);
+        }
 
         // Deception trigger at 30%
         if (!deceptionTriggered && t > 0.28) {
@@ -511,6 +562,9 @@ export default function BadmintonScene() {
       cancelAnimationFrame(frameId);
       window.removeEventListener('resize', onResize);
       introTL.kill();
+      gsap.killTweensOf(arcT);
+      gsap.killTweensOf(shuttleGroup.position);
+      clearTimeout(deceptionTimer);
       renderer.dispose();
     };
   }, [scrollProgress]);
