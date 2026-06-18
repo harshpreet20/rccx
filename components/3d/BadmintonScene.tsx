@@ -37,12 +37,12 @@ const CAM_CURVE = new THREE.CatmullRomCurve3([
   new THREE.Vector3(0, 22, -20),
 ]);
 
-/* Shuttle deception arc */
+/* Shuttle deception arc — starts at player racquet, crosses net, drops on far side */
 const SHUTTLE_CURVE = new THREE.CatmullRomCurve3([
-  new THREE.Vector3(-4, 2.5, -2),
-  new THREE.Vector3(-1, 5.5, 1),
-  new THREE.Vector3(2, 4.8, 3),
-  new THREE.Vector3(4.5, 1.2, 5),
+  new THREE.Vector3(-1.5, 4.2, 4),   // racquet contact point (player foreground)
+  new THREE.Vector3(0, 7.5, 1),      // peak arc (clears net)
+  new THREE.Vector3(2.5, 5.5, -2),   // deception drop
+  new THREE.Vector3(4, 1.0, -5),     // lands far side
 ]);
 
 /* Look-at targets per section */
@@ -167,12 +167,22 @@ function buildShuttlecock(): THREE.Group {
 }
 
 function buildPlayerGroup(): THREE.Group {
-  const mat = () => new THREE.MeshStandardMaterial({ color: 0x0a1628, roughness: 0.4, metalness: 0.2 });
+  // Gold-lit silhouette — emissive so it reads against the dark court
+  const mat = () => new THREE.MeshStandardMaterial({
+    color: 0x1a3a6a,
+    emissive: 0xc9a84c,
+    emissiveIntensity: 0.55,
+    roughness: 0.35,
+    metalness: 0.4,
+  });
   const mesh = (geo: THREE.BufferGeometry) => new THREE.Mesh(geo, mat());
 
   const playerGroup = new THREE.Group();
-  playerGroup.position.set(-5, 0.5, -3);
-  playerGroup.rotation.y = 0.3;
+  // Camera-side of court, foreground — clearly visible from camera at (-3,8,14)
+  playerGroup.position.set(-2, 0, 5);
+  // Face toward the net (negative z)
+  playerGroup.rotation.y = Math.PI;
+  playerGroup.scale.set(1.4, 1.4, 1.4);
 
   // Torso
   const torso = mesh(new THREE.BoxGeometry(0.7, 1.2, 0.35));
@@ -299,8 +309,9 @@ export default function BadmintonScene() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(NAVY);
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
-    camera.position.set(-3, 8, 14);
-    camera.lookAt(-2, 2, 0);
+    // Side angle: shows player in foreground, court + net in background
+    camera.position.set(6, 5, 10);
+    camera.lookAt(-1, 2, 2);
 
     /* Post-processing */
     const composer = new EffectComposer(renderer);
@@ -341,6 +352,13 @@ export default function BadmintonScene() {
     scene.add(crimsonRim); scene.add(crimsonRim.target);
 
     scene.add(new THREE.AmbientLight(0x0a1628, 0.4));
+
+    // Dedicated player spotlight — always illuminates the smash silhouette
+    const playerSpot = new THREE.SpotLight(GOLD_WARM, 120, 20, 0.5, 0.4);
+    playerSpot.position.set(2, 10, 8);
+    playerSpot.target.position.set(-2, 2, 5);
+    scene.add(playerSpot);
+    scene.add(playerSpot.target);
 
     /* ─── Court ─── */
     const floor = new THREE.Mesh(
@@ -412,7 +430,7 @@ export default function BadmintonScene() {
 
     /* ─── Camera state ─── */
     let smoothT = 0;
-    const currentLookAt = new THREE.Vector3(-2, 2, 0);
+    const currentLookAt = new THREE.Vector3(-1, 2, 2);
     let introComplete = false;
     let deceptionTriggered = false;
     let chromAbStrength = 0;
@@ -447,17 +465,20 @@ export default function BadmintonScene() {
       arcT.value = 0;
       shuttleGroup.position.copy(SHUTTLE_CURVE.getPoint(0));
 
-      // Smash animation — sync with shuttle arc
-      if (!isMobile && racquetArm) {
+      // Smash animation — player faces -z, arm swings on z-axis overhead
+      if (racquetArm) {
         gsap.killTweensOf(racquetArm.rotation);
         gsap.killTweensOf(torsoMesh.rotation);
         const smashTL = gsap.timeline();
-        smashTL.to(racquetArm.rotation, { z: 1.2, duration: 0.25, ease: 'power2.out' });
-        smashTL.to(torsoMesh.rotation,  { z: 0.12, duration: 0.25, ease: 'power2.out' }, '<');
-        smashTL.to(racquetArm.rotation, { z: -0.9, duration: 0.3, ease: 'power4.out' });
-        smashTL.to(torsoMesh.rotation,  { z: -0.12, duration: 0.3, ease: 'power4.out' }, '<');
-        smashTL.to(racquetArm.rotation, { z: 0, duration: 0.8, ease: 'power1.inOut' });
-        smashTL.to(torsoMesh.rotation,  { z: 0, duration: 0.8, ease: 'power1.inOut' }, '<');
+        // Wind-up: arm swings back overhead
+        smashTL.to(racquetArm.rotation, { z: -1.4, duration: 0.3, ease: 'power2.out' });
+        smashTL.to(torsoMesh.rotation,  { z: 0.1, duration: 0.3, ease: 'power2.out' }, '<');
+        // Smash: explosive snap forward and down
+        smashTL.to(racquetArm.rotation, { z: 1.1, duration: 0.28, ease: 'power4.out' });
+        smashTL.to(torsoMesh.rotation,  { z: -0.15, duration: 0.28, ease: 'power4.out' }, '<');
+        // Follow-through and recovery
+        smashTL.to(racquetArm.rotation, { z: 0, duration: 0.9, ease: 'power1.inOut' });
+        smashTL.to(torsoMesh.rotation,  { z: 0, duration: 0.9, ease: 'power1.inOut' }, '<');
       }
 
       // Pulse court lines gold on smash
