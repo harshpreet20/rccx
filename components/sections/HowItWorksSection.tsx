@@ -11,7 +11,7 @@ const STEPS_NOW = [
   },
   {
     icon: <BarChart2 size={22} color="#D4AF37" />,
-    accent: '#D4AF37',
+    accent: '#C9A84C',
     label: 'Session Polls',
     desc: 'We drop polls before every session — date, venue, doubles or singles. You vote, we count, we confirm within hours.',
   },
@@ -32,7 +32,7 @@ const STEPS_FUTURE = [
   },
   {
     icon: <Zap size={22} color="#D4AF37" />,
-    accent: '#D4AF37',
+    accent: '#C9A84C',
     label: 'Skill-Matched Games',
     desc: "AI pairs you with players at your level for every session — balanced doubles, fair singles, no mismatches.",
   },
@@ -48,14 +48,30 @@ export default function HowItWorksSection() {
   return (
     <section
       style={{
-        background: '#070912',
+        background: '#0A1628',
         padding: 'clamp(60px, 8vw, 100px) clamp(20px, 6vw, 120px)',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
       {/* Gold top border */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.25), transparent)' }} />
+      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)' }} />
+
+      {/* Animated shuttlecocks */}
+      <svg aria-hidden style={{ position: 'absolute', top: '12%', left: '-3%', width: 32, height: 40, opacity: 0.18, animation: 'shuttle-drift-1 18s linear infinite', pointerEvents: 'none' }} viewBox="0 0 32 40">
+        <circle cx="16" cy="7" r="6" fill="#C9A84C" />
+        <path d="M10 13 Q16 32 22 13 Q16 18 10 13Z" fill="#C9A84C" opacity="0.7" />
+        {[0,1,2,3,4,5,6,7].map(i => <line key={i} x1="16" y1="13" x2={16 + Math.cos((i/8)*Math.PI*2)*11} y2={13 + Math.sin((i/8)*Math.PI*2)*14} stroke="#C9A84C" strokeWidth="0.8" opacity="0.5" />)}
+      </svg>
+      <svg aria-hidden style={{ position: 'absolute', bottom: '18%', right: '5%', width: 24, height: 32, opacity: 0.14, animation: 'shuttle-drift-2 24s linear infinite', pointerEvents: 'none', transform: 'rotate(45deg)' }} viewBox="0 0 32 40">
+        <circle cx="16" cy="7" r="6" fill="#C9A84C" />
+        <path d="M10 13 Q16 32 22 13 Q16 18 10 13Z" fill="#C9A84C" opacity="0.7" />
+        {[0,1,2,3,4,5,6,7].map(i => <line key={i} x1="16" y1="13" x2={16 + Math.cos((i/8)*Math.PI*2)*11} y2={13 + Math.sin((i/8)*Math.PI*2)*14} stroke="#C9A84C" strokeWidth="0.8" opacity="0.5" />)}
+      </svg>
+      <style>{`
+        @keyframes shuttle-drift-1 { 0%{transform:translate(0,0) rotate(-30deg)} 50%{transform:translate(60vw,30px) rotate(-30deg)} 100%{transform:translate(0,0) rotate(-30deg)} }
+        @keyframes shuttle-drift-2 { 0%{transform:translate(0,0) rotate(45deg)} 50%{transform:translate(-40vw,-20px) rotate(45deg)} 100%{transform:translate(0,0) rotate(45deg)} }
+      `}</style>
 
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
@@ -78,14 +94,14 @@ export default function HowItWorksSection() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
               <div style={{ height: 1, flex: 1, background: 'rgba(255,255,255,0.07)' }} />
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.18em', color: '#D4AF37', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>How It Works Today</span>
+              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.18em', color: '#C9A84C', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>How It Works Today</span>
               <div style={{ height: 1, flex: 1, background: 'rgba(255,255,255,0.07)' }} />
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {STEPS_NOW.map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 16, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '18px 20px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: `rgba(${step.accent === '#25D366' ? '37,211,102' : step.accent === '#D4AF37' ? '212,175,55' : '194,24,24'},0.1)`, border: `1px solid ${step.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: `rgba(${step.accent === '#25D366' ? '37,211,102' : step.accent === '#D4AF37' ? '201,168,76' : '194,24,24'},0.1)`, border: `1px solid ${step.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {step.icon}
                   </div>
                   <div>
@@ -120,7 +136,7 @@ export default function HowItWorksSection() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               {STEPS_FUTURE.map((step, i) => (
                 <div key={i} style={{ display: 'flex', gap: 16, background: 'rgba(167,139,250,0.03)', border: '1px solid rgba(167,139,250,0.12)', borderRadius: 12, padding: '18px 20px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: `rgba(${step.accent === '#a78bfa' ? '167,139,250' : step.accent === '#D4AF37' ? '212,175,55' : '74,222,128'},0.1)`, border: `1px solid ${step.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 10, background: `rgba(${step.accent === '#a78bfa' ? '167,139,250' : step.accent === '#D4AF37' ? '201,168,76' : '74,222,128'},0.1)`, border: `1px solid ${step.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     {step.icon}
                   </div>
                   <div>
@@ -147,7 +163,7 @@ export default function HowItWorksSection() {
         <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
           {[
             { stat: 'WhatsApp', sub: 'Active community group', color: '#25D366' },
-            { stat: 'Weekly Polls', sub: 'Every session decided by vote', color: '#D4AF37' },
+            { stat: 'Weekly Polls', sub: 'Every session decided by vote', color: '#C9A84C' },
             { stat: '48 hrs', sub: 'Venue confirmed before play', color: '#C21818' },
             { stat: 'AI Q4 2025', sub: 'Smart matchmaking target', color: '#a78bfa' },
           ].map(({ stat, sub, color }) => (

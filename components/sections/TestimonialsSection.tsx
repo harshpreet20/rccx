@@ -21,8 +21,8 @@ function StarRating({ rating }: { rating: number }) {
         <Star
           key={i}
           size={16}
-          color={i < rating ? '#D4AF37' : 'rgba(255,255,255,0.15)'}
-          fill={i < rating ? '#D4AF37' : 'none'}
+          color={i < rating ? '#C9A84C' : 'rgba(255,255,255,0.15)'}
+          fill={i < rating ? '#C9A84C' : 'none'}
         />
       ))}
     </div>
@@ -97,7 +97,7 @@ export default function TestimonialsSection() {
       ref={sectionRef}
       style={{
         padding: '80px clamp(16px, 5vw, 120px)',
-        background: '#0a0a0f',
+        background: '#0A1628',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -109,15 +109,22 @@ export default function TestimonialsSection() {
           left: 0,
           right: 0,
           height: '1px',
-          background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.3), transparent)',
+          background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.3), transparent)',
         }}
       />
+      {/* Ambient shuttle */}
+      <svg aria-hidden style={{ position: 'absolute', top: '15%', left: '6%', width: 26, height: 34, opacity: 0.13, animation: 'shuttle-drift-tm 22s linear infinite', pointerEvents: 'none', transform: 'rotate(120deg)' }} viewBox="0 0 32 40">
+        <circle cx="16" cy="7" r="6" fill="#C9A84C" />
+        <path d="M10 13 Q16 32 22 13 Q16 18 10 13Z" fill="#C9A84C" opacity="0.7" />
+        {[0,1,2,3,4,5,6,7].map(i => <line key={i} x1="16" y1="13" x2={16 + Math.cos((i/8)*Math.PI*2)*11} y2={13 + Math.sin((i/8)*Math.PI*2)*14} stroke="#C9A84C" strokeWidth="0.8" opacity="0.5" />)}
+      </svg>
+      <style>{`@keyframes shuttle-drift-tm { 0%{transform:translate(0,0) rotate(120deg)} 50%{transform:translate(50vw,15px) rotate(120deg)} 100%{transform:translate(0,0) rotate(120deg)} }`}</style>
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(194,24,24,0.06) 0%, rgba(212,175,55,0.03) 40%, transparent 70%)',
+            'radial-gradient(ellipse 80% 60% at 50% 50%, rgba(194,24,24,0.06) 0%, rgba(201,168,76,0.03) 40%, transparent 70%)',
           pointerEvents: 'none',
         }}
       />
@@ -249,14 +256,14 @@ export default function TestimonialsSection() {
                       width: '48px',
                       height: '48px',
                       borderRadius: '50%',
-                      background: 'linear-gradient(135deg, rgba(212,175,55,0.3), rgba(194,24,24,0.3))',
-                      border: '1px solid rgba(212,175,55,0.3)',
+                      background: 'linear-gradient(135deg, rgba(201,168,76,0.3), rgba(194,24,24,0.3))',
+                      border: '1px solid rgba(201,168,76,0.3)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontFamily: 'var(--font-bebas)',
                       fontSize: '1.4rem',
-                      color: '#D4AF37',
+                      color: '#C9A84C',
                     }}
                   >
                     {testimonials[currentIndex].player_name.charAt(0)}
@@ -276,7 +283,7 @@ export default function TestimonialsSection() {
                       style={{
                         fontFamily: 'var(--font-inter)',
                         fontSize: '12px',
-                        color: '#D4AF37',
+                        color: '#C9A84C',
                       }}
                     >
                       {testimonials[currentIndex].player_title}
@@ -313,8 +320,8 @@ export default function TestimonialsSection() {
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(212,175,55,0.4)';
-                  (e.currentTarget as HTMLButtonElement).style.color = '#D4AF37';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(201,168,76,0.4)';
+                  (e.currentTarget as HTMLButtonElement).style.color = '#C9A84C';
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)';
@@ -336,7 +343,7 @@ export default function TestimonialsSection() {
                       width: i === currentIndex ? '24px' : '8px',
                       height: '8px',
                       borderRadius: '4px',
-                      background: i === currentIndex ? '#D4AF37' : 'rgba(255,255,255,0.2)',
+                      background: i === currentIndex ? '#C9A84C' : 'rgba(255,255,255,0.2)',
                       border: 'none',
                       cursor: 'pointer',
                       transition: 'all 0.3s',
@@ -361,8 +368,8 @@ export default function TestimonialsSection() {
                   transition: 'all 0.2s',
                 }}
                 onMouseEnter={(e) => {
-                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(212,175,55,0.4)';
-                  (e.currentTarget as HTMLButtonElement).style.color = '#D4AF37';
+                  (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(201,168,76,0.4)';
+                  (e.currentTarget as HTMLButtonElement).style.color = '#C9A84C';
                 }}
                 onMouseLeave={(e) => {
                   (e.currentTarget as HTMLButtonElement).style.borderColor = 'rgba(255,255,255,0.15)';

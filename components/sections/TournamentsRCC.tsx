@@ -56,7 +56,7 @@ export default function TournamentsRCC() {
       ref={sectionRef}
       style={{
         background: 'linear-gradient(180deg, #0A1628 0%, #0D1E3A 100%)',
-        padding: 'clamp(80px, 10vw, 140px) clamp(24px, 6vw, 80px)',
+        padding: 'clamp(120px, 14vw, 180px) clamp(24px, 6vw, 80px) clamp(80px, 10vw, 140px)',
         position: 'relative',
         overflow: 'hidden',
       }}

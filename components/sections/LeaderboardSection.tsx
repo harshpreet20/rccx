@@ -24,7 +24,7 @@ type TabOption = 'WEEKLY' | 'MONTHLY' | 'ALL-TIME';
 const TABS: TabOption[] = ['WEEKLY', 'MONTHLY', 'ALL-TIME'];
 
 const SKILL_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  elite: { bg: 'rgba(212,175,55,0.15)', text: '#D4AF37', border: 'rgba(212,175,55,0.4)' },
+  elite: { bg: 'rgba(201,168,76,0.15)', text: '#C9A84C', border: 'rgba(201,168,76,0.4)' },
   advanced: { bg: 'rgba(194,24,24,0.15)', text: '#ef4444', border: 'rgba(194,24,24,0.4)' },
   intermediate: { bg: 'rgba(59,130,246,0.15)', text: '#60a5fa', border: 'rgba(59,130,246,0.4)' },
   beginner: { bg: 'rgba(34,197,94,0.15)', text: '#4ade80', border: 'rgba(34,197,94,0.4)' },
@@ -35,7 +35,7 @@ function getSkillColor(level: string) {
 }
 
 const MEDAL_STYLES = [
-  { border: 'rgba(212,175,55,0.6)', text: '#D4AF37', bg: 'rgba(212,175,55,0.12)', label: '1st' },
+  { border: 'rgba(201,168,76,0.6)', text: '#C9A84C', bg: 'rgba(201,168,76,0.12)', label: '1st' },
   { border: 'rgba(160,160,180,0.6)', text: '#a0a0b4', bg: 'rgba(160,160,180,0.1)', label: '2nd' },
   { border: 'rgba(180,100,40,0.6)', text: '#c06030', bg: 'rgba(180,100,40,0.1)', label: '3rd' },
 ];
@@ -72,7 +72,7 @@ function StreakIndicator({ streak }: { streak: number }) {
         style={{
           fontFamily: 'var(--font-montserrat)',
           fontSize: '11px',
-          color: '#D4AF37',
+          color: '#C9A84C',
           fontWeight: 600,
           marginLeft: '2px',
         }}
@@ -107,7 +107,7 @@ export default function LeaderboardSection() {
       ref={sectionRef}
       style={{
         padding: '80px clamp(16px, 5vw, 120px)',
-        background: '#0a0a0f',
+        background: '#0A1628',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -119,7 +119,7 @@ export default function LeaderboardSection() {
           left: 0,
           right: 0,
           height: '1px',
-          background: 'linear-gradient(to right, transparent, rgba(212,175,55,0.3), transparent)',
+          background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.3), transparent)',
         }}
       />
       <div
@@ -134,6 +134,34 @@ export default function LeaderboardSection() {
           pointerEvents: 'none',
         }}
       />
+
+      {/* Player silhouette — deception lunge pose */}
+      <svg aria-hidden style={{ position: 'absolute', bottom: 0, right: '3%', width: 120, height: 220, opacity: 0.07, pointerEvents: 'none' }} viewBox="0 0 80 160" fill="#C9A84C">
+        {/* Head */}
+        <circle cx="48" cy="12" r="8" />
+        {/* Torso */}
+        <rect x="38" y="20" width="14" height="36" rx="3" />
+        {/* Right arm extended overhead (racket swing) */}
+        <line x1="52" y1="24" x2="72" y2="4" stroke="#C9A84C" strokeWidth="5" strokeLinecap="round" />
+        {/* Racket head */}
+        <ellipse cx="74" cy="2" rx="7" ry="5" fill="none" stroke="#C9A84C" strokeWidth="2.5" />
+        {/* Left arm */}
+        <line x1="38" y1="26" x2="22" y2="38" stroke="#C9A84C" strokeWidth="5" strokeLinecap="round" />
+        {/* Right leg — lunge forward */}
+        <line x1="48" y1="56" x2="60" y2="100" stroke="#C9A84C" strokeWidth="5" strokeLinecap="round" />
+        <line x1="60" y1="100" x2="78" y2="110" stroke="#C9A84C" strokeWidth="5" strokeLinecap="round" />
+        {/* Left leg — back leg */}
+        <line x1="42" y1="56" x2="30" y2="100" stroke="#C9A84C" strokeWidth="5" strokeLinecap="round" />
+        <line x1="30" y1="100" x2="20" y2="108" stroke="#C9A84C" strokeWidth="5" strokeLinecap="round" />
+      </svg>
+
+      {/* Drifting shuttle */}
+      <svg aria-hidden style={{ position: 'absolute', top: '8%', right: '18%', width: 22, height: 30, opacity: 0.15, animation: 'shuttle-drift-lb 20s linear infinite', pointerEvents: 'none' }} viewBox="0 0 32 40">
+        <circle cx="16" cy="7" r="6" fill="#C9A84C" />
+        <path d="M10 13 Q16 32 22 13 Q16 18 10 13Z" fill="#C9A84C" opacity="0.7" />
+        {[0,1,2,3,4,5,6,7].map(i => <line key={i} x1="16" y1="13" x2={16 + Math.cos((i/8)*Math.PI*2)*11} y2={13 + Math.sin((i/8)*Math.PI*2)*14} stroke="#C9A84C" strokeWidth="0.8" opacity="0.5" />)}
+      </svg>
+      <style>{`@keyframes shuttle-drift-lb { 0%{transform:translate(0,0) rotate(-20deg)} 50%{transform:translate(-30vw,40px) rotate(-20deg)} 100%{transform:translate(0,0) rotate(-20deg)} }`}</style>
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -176,9 +204,9 @@ export default function LeaderboardSection() {
               style={{
                 padding: '8px 18px',
                 borderRadius: '6px',
-                border: activeTab === tab ? '1px solid rgba(212,175,55,0.5)' : '1px solid rgba(255,255,255,0.1)',
-                background: activeTab === tab ? 'rgba(212,175,55,0.1)' : 'transparent',
-                color: activeTab === tab ? '#D4AF37' : '#888899',
+                border: activeTab === tab ? '1px solid rgba(201,168,76,0.5)' : '1px solid rgba(255,255,255,0.1)',
+                background: activeTab === tab ? 'rgba(201,168,76,0.1)' : 'transparent',
+                color: activeTab === tab ? '#C9A84C' : '#888899',
                 fontFamily: 'var(--font-montserrat)',
                 fontSize: '11px',
                 fontWeight: 700,
@@ -345,8 +373,8 @@ function LeaderboardRow({
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              background: 'rgba(212,175,55,0.1)',
-              border: '1px solid rgba(212,175,55,0.2)',
+              background: 'rgba(201,168,76,0.1)',
+              border: '1px solid rgba(201,168,76,0.2)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -394,7 +422,7 @@ function LeaderboardRow({
           style={{
             fontFamily: 'var(--font-bebas)',
             fontSize: '1.4rem',
-            color: medal ? medal.text : '#D4AF37',
+            color: medal ? medal.text : '#C9A84C',
             lineHeight: 1,
           }}
         >

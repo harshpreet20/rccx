@@ -75,7 +75,7 @@ export default function InstagramFeed() {
       ref={sectionRef}
       style={{
         padding: '80px clamp(16px, 5vw, 120px)',
-        background: '#0a0a0f',
+        background: '#0A1628',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -163,7 +163,7 @@ export default function InstagramFeed() {
             fontSize: '12px',
             fontWeight: 700,
             letterSpacing: '0.15em',
-            color: '#D4AF37',
+            color: '#C9A84C',
             textDecoration: 'none',
             textTransform: 'uppercase',
           }}
@@ -238,7 +238,7 @@ function PostCard({ post }: { post: InstagramPost }) {
             onClick={(e) => e.stopPropagation()}
             style={{
               display: 'flex', alignItems: 'center', gap: '5px',
-              fontFamily: 'var(--font-montserrat)', fontSize: '11px', color: '#D4AF37', fontWeight: 600,
+              fontFamily: 'var(--font-montserrat)', fontSize: '11px', color: '#C9A84C', fontWeight: 600,
               textDecoration: 'none',
             }}
           >
@@ -253,7 +253,7 @@ function PostCard({ post }: { post: InstagramPost }) {
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
                 title="Share"
-                style={{ display: 'flex', color: '#D4AF37', textDecoration: 'none' }}
+                style={{ display: 'flex', color: '#C9A84C', textDecoration: 'none' }}
               >
                 <Share2 size={11} />
               </a>
@@ -265,7 +265,7 @@ function PostCard({ post }: { post: InstagramPost }) {
                 style={{
                   display: 'flex', alignItems: 'center', gap: '4px',
                   fontFamily: 'var(--font-montserrat)', fontSize: '10px',
-                  color: '#D4AF37', letterSpacing: '0.1em', textDecoration: 'none', fontWeight: 700,
+                  color: '#C9A84C', letterSpacing: '0.1em', textDecoration: 'none', fontWeight: 700,
                 }}
               >
                 VIEW <ExternalLink size={10} />

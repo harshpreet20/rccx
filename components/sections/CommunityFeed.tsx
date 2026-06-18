@@ -52,7 +52,7 @@ const FALLBACK: Announcement[] = [
 ];
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  match_result: { bg: 'rgba(212,175,55,0.12)', text: '#D4AF37', border: 'rgba(212,175,55,0.3)' },
+  match_result: { bg: 'rgba(212,175,55,0.12)', text: '#C9A84C', border: 'rgba(212,175,55,0.3)' },
   event: { bg: 'rgba(194,24,24,0.12)', text: '#ef4444', border: 'rgba(194,24,24,0.3)' },
   announcement: { bg: 'rgba(59,130,246,0.12)', text: '#60a5fa', border: 'rgba(59,130,246,0.3)' },
   achievement: { bg: 'rgba(139,92,246,0.12)', text: '#a78bfa', border: 'rgba(139,92,246,0.3)' },
@@ -102,7 +102,7 @@ export default function CommunityFeed({ limit }: { limit?: number }) {
       ref={sectionRef}
       style={{
         padding: '80px clamp(16px, 5vw, 120px)',
-        background: '#0a0a0f',
+        background: '#0A1628',
         position: 'relative',
         overflow: 'hidden',
       }}
@@ -139,7 +139,7 @@ export default function CommunityFeed({ limit }: { limit?: number }) {
             href="/community"
             style={{
               fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11,
-              letterSpacing: '0.12em', color: '#D4AF37', textDecoration: 'none',
+              letterSpacing: '0.12em', color: '#C9A84C', textDecoration: 'none',
               border: '1px solid rgba(212,175,55,0.3)', borderRadius: 8,
               padding: '10px 20px', whiteSpace: 'nowrap',
               transition: 'background 0.2s',
@@ -239,7 +239,7 @@ function FeedCard({ item }: { item: Announcement }) {
                 padding: '3px 8px', background: 'rgba(212,175,55,0.15)',
                 border: '1px solid rgba(212,175,55,0.3)', borderRadius: '4px',
                 fontFamily: 'var(--font-montserrat)', fontSize: '9px', fontWeight: 700,
-                letterSpacing: '0.1em', color: '#D4AF37',
+                letterSpacing: '0.1em', color: '#C9A84C',
               }}>
                 📌 PINNED
               </span>
