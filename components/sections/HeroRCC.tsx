@@ -5,9 +5,8 @@ import { gsap } from 'gsap';
 import { wordImpact } from '@/lib/impactTypography';
 
 const HERO_STATS = [
-  { value: '300+', label: 'Players' },
-  { value: '12', label: 'Tournaments' },
-  { value: '4', label: 'Courts' },
+  { value: '350+', label: 'Players' },
+  { value: '10+', label: 'Courts Covered' },
   { value: '2024', label: 'Established' },
 ];
 

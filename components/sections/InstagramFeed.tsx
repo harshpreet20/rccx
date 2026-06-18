@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useInView } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-import { ExternalLink, Heart } from 'lucide-react';
+import { ExternalLink, Heart, Share2 } from 'lucide-react';
 
 interface InstagramPost {
   id: string;
@@ -231,27 +231,46 @@ function PostCard({ post }: { post: InstagramPost }) {
           {post.caption}
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <span style={{
-            display: 'flex', alignItems: 'center', gap: '5px',
-            fontFamily: 'var(--font-montserrat)', fontSize: '11px', color: '#D4AF37', fontWeight: 600,
-          }}>
+          <a
+            href={post.post_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              display: 'flex', alignItems: 'center', gap: '5px',
+              fontFamily: 'var(--font-montserrat)', fontSize: '11px', color: '#D4AF37', fontWeight: 600,
+              textDecoration: 'none',
+            }}
+          >
             <Heart size={11} fill="#D4AF37" stroke="none" />
             {post.likes?.toLocaleString()}
-          </span>
+          </a>
           {hovered && (
-            <a
-              href={post.post_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '4px',
-                fontFamily: 'var(--font-montserrat)', fontSize: '10px',
-                color: '#D4AF37', letterSpacing: '0.1em', textDecoration: 'none', fontWeight: 700,
-              }}
-            >
-              VIEW <ExternalLink size={10} />
-            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <a
+                href={`https://www.instagram.com/share?url=${encodeURIComponent(post.post_url)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                title="Share"
+                style={{ display: 'flex', color: '#D4AF37', textDecoration: 'none' }}
+              >
+                <Share2 size={11} />
+              </a>
+              <a
+                href={post.post_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '4px',
+                  fontFamily: 'var(--font-montserrat)', fontSize: '10px',
+                  color: '#D4AF37', letterSpacing: '0.1em', textDecoration: 'none', fontWeight: 700,
+                }}
+              >
+                VIEW <ExternalLink size={10} />
+              </a>
+            </div>
           )}
         </div>
       </div>

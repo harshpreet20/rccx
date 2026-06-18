@@ -254,8 +254,8 @@ export default function BadmintonScene() {
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(NAVY);
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
-    camera.position.set(0, 28, 0);
-    camera.lookAt(0, 0, 0);
+    camera.position.set(-3, 8, 14);
+    camera.lookAt(0, 1, 0);
 
     /* Post-processing */
     const composer = new EffectComposer(renderer);
@@ -354,7 +354,7 @@ export default function BadmintonScene() {
 
     /* ─── Camera state ─── */
     let smoothT = 0;
-    const currentLookAt = new THREE.Vector3(0, 0, 0);
+    const currentLookAt = new THREE.Vector3(0, 1, 0);
     let introComplete = false;
     let deceptionTriggered = false;
     let chromAbStrength = 0;

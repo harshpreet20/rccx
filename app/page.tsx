@@ -10,7 +10,11 @@ import HeroRCC from '@/components/sections/HeroRCC';
 import AboutRCC from '@/components/sections/AboutRCC';
 import TournamentInvite from '@/components/sections/TournamentInvite';
 import TournamentsRCC from '@/components/sections/TournamentsRCC';
-import MemberRoster from '@/components/sections/MemberRoster';
+import HowItWorksSection from '@/components/sections/HowItWorksSection';
+import LeaderboardSection from '@/components/sections/LeaderboardSection';
+import CommunityFeed from '@/components/sections/CommunityFeed';
+import TestimonialsSection from '@/components/sections/TestimonialsSection';
+import InstagramFeed from '@/components/sections/InstagramFeed';
 import ActivityFeed from '@/components/sections/ActivityFeed';
 import FooterRCC from '@/components/layout/FooterRCC';
 import ScoreTicker from '@/components/ui/ScoreTicker';
@@ -62,10 +66,11 @@ export default function Home() {
             <TournamentsRCC />
           </div>
 
-          <div data-scene-section="roster">
-            <MemberRoster />
-          </div>
-
+          <HowItWorksSection />
+          <LeaderboardSection />
+          <CommunityFeed />
+          <TestimonialsSection />
+          <InstagramFeed />
           <ActivityFeed />
           <FooterRCC />
           <ChatBot />
