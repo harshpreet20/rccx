@@ -7,7 +7,6 @@ import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
-import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { useScrollContext } from '@/lib/scrollContext';
 
 /* ─────────────────────────────────────────────────────────────
@@ -167,43 +166,89 @@ function buildShuttlecock(): THREE.Group {
   return group;
 }
 
-function buildPlayerSilhouette(): THREE.Mesh {
-  const parts: THREE.BufferGeometry[] = [];
-  const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
-  const R = (axis: 'x' | 'y' | 'z', angle: number) => {
-    const m = new THREE.Matrix4();
-    if (axis === 'x') m.makeRotationX(angle);
-    if (axis === 'y') m.makeRotationY(angle);
-    if (axis === 'z') m.makeRotationZ(angle);
-    return m;
-  };
-  const add = (geo: THREE.BufferGeometry, mat: THREE.Matrix4) => {
-    geo.applyMatrix4(mat); parts.push(geo);
-  };
+function buildPlayerGroup(): THREE.Group {
+  const mat = () => new THREE.MeshStandardMaterial({ color: 0x0a1628, roughness: 0.4, metalness: 0.2 });
+  const mesh = (geo: THREE.BufferGeometry) => new THREE.Mesh(geo, mat());
 
-  add(new THREE.BoxGeometry(0.7, 1.2, 0.35), T(0, 1.5, 0));
-  add(new THREE.SphereGeometry(0.26, 8, 6), T(0.1, 2.55, 0));
-  add(new THREE.BoxGeometry(0.22, 0.7, 0.2), T(0.55, 2.1, 0).multiply(R('z', -Math.PI * 0.65)));
-  add(new THREE.BoxGeometry(0.18, 0.65, 0.18), T(0.85, 2.7, 0).multiply(R('z', -Math.PI * 0.85)));
-  add(new THREE.BoxGeometry(0.12, 0.12, 0.12), T(1.05, 3.3, 0));
-  add(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 6), T(1.2, 3.65, 0).multiply(R('z', -0.2)));
-  add(new THREE.BoxGeometry(0.5, 0.55, 0.04), T(1.25, 4.1, 0).multiply(R('z', -0.15)));
-  add(new THREE.BoxGeometry(0.22, 0.65, 0.2), T(-0.55, 1.9, 0).multiply(R('z', Math.PI * 0.35)));
-  add(new THREE.BoxGeometry(0.18, 0.55, 0.18), T(-0.85, 1.55, 0).multiply(R('z', Math.PI * 0.55)));
-  add(new THREE.BoxGeometry(0.3, 0.85, 0.3), T(0.22, 0.55, 0.2).multiply(R('x', 0.35)));
-  add(new THREE.BoxGeometry(0.26, 0.7, 0.26), T(0.22, -0.1, 0.45).multiply(R('x', -0.3)));
-  add(new THREE.BoxGeometry(0.3, 0.85, 0.3), T(-0.22, 0.45, -0.3).multiply(R('x', -0.45)));
-  add(new THREE.BoxGeometry(0.26, 0.75, 0.26), T(-0.22, -0.15, -0.55).multiply(R('x', 0.4)));
+  const playerGroup = new THREE.Group();
+  playerGroup.position.set(-5, 0.5, -3);
+  playerGroup.rotation.y = 0.3;
 
-  const merged = mergeGeometries(parts);
-  const mesh = new THREE.Mesh(
-    merged,
-    new THREE.MeshStandardMaterial({ color: 0x0a1628, roughness: 0.4, metalness: 0.2 })
-  );
-  mesh.position.set(-5, 0.5, -3);
-  mesh.rotation.y = 0.3;
-  mesh.castShadow = true;
-  return mesh;
+  // Torso
+  const torso = mesh(new THREE.BoxGeometry(0.7, 1.2, 0.35));
+  torso.name = 'torso';
+  torso.position.set(0, 1.5, 0);
+  playerGroup.add(torso);
+
+  // Head
+  const head = mesh(new THREE.SphereGeometry(0.26, 8, 6));
+  head.name = 'head';
+  head.position.set(0.1, 2.55, 0);
+  playerGroup.add(head);
+
+  // Racquet arm group — pivot at right shoulder
+  const racquetArm = new THREE.Group();
+  racquetArm.name = 'racquetArm';
+  racquetArm.position.set(0.55, 2.1, 0);
+
+  const upperArm = mesh(new THREE.BoxGeometry(0.22, 0.7, 0.2));
+  upperArm.position.set(0, -0.35, 0);
+  upperArm.rotation.z = -Math.PI * 0.65;
+  racquetArm.add(upperArm);
+
+  const foreArm = mesh(new THREE.BoxGeometry(0.18, 0.65, 0.18));
+  foreArm.position.set(0.3, 0.6, 0);
+  foreArm.rotation.z = -Math.PI * 0.85;
+  racquetArm.add(foreArm);
+
+  const handle = mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 6));
+  handle.position.set(0.5, 1.2, 0);
+  handle.rotation.z = -0.2;
+  racquetArm.add(handle);
+
+  const racquetHead = mesh(new THREE.BoxGeometry(0.5, 0.55, 0.04));
+  racquetHead.position.set(0.7, 1.65, 0);
+  racquetHead.rotation.z = -0.15;
+  racquetArm.add(racquetHead);
+
+  playerGroup.add(racquetArm);
+
+  // Off arm (left) — static
+  const offArm = new THREE.Group();
+  offArm.name = 'offArm';
+  offArm.position.set(-0.55, 1.9, 0);
+  const offUpper = mesh(new THREE.BoxGeometry(0.22, 0.65, 0.2));
+  offUpper.position.set(0, -0.32, 0);
+  offUpper.rotation.z = Math.PI * 0.35;
+  offArm.add(offUpper);
+  const offFore = mesh(new THREE.BoxGeometry(0.18, 0.55, 0.18));
+  offFore.position.set(-0.3, -0.55, 0);
+  offFore.rotation.z = Math.PI * 0.55;
+  offArm.add(offFore);
+  playerGroup.add(offArm);
+
+  // Legs
+  const legR = mesh(new THREE.BoxGeometry(0.3, 0.85, 0.3));
+  legR.position.set(0.22, 0.55, 0.2);
+  legR.rotation.x = 0.35;
+  playerGroup.add(legR);
+
+  const shinR = mesh(new THREE.BoxGeometry(0.26, 0.7, 0.26));
+  shinR.position.set(0.22, -0.1, 0.45);
+  shinR.rotation.x = -0.3;
+  playerGroup.add(shinR);
+
+  const legL = mesh(new THREE.BoxGeometry(0.3, 0.85, 0.3));
+  legL.position.set(-0.22, 0.45, -0.3);
+  legL.rotation.x = -0.45;
+  playerGroup.add(legL);
+
+  const shinL = mesh(new THREE.BoxGeometry(0.26, 0.75, 0.26));
+  shinL.position.set(-0.22, -0.15, -0.55);
+  shinL.rotation.x = 0.4;
+  playerGroup.add(shinL);
+
+  return playerGroup;
 }
 
 function buildDustParticles(origin: THREE.Vector3, count: number): { points: THREE.Points; velocities: Float32Array } {
@@ -255,7 +300,7 @@ export default function BadmintonScene() {
     scene.background = new THREE.Color(NAVY);
     const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
     camera.position.set(-3, 8, 14);
-    camera.lookAt(-3, 2.5, -1);
+    camera.lookAt(-2, 2, 0);
 
     /* Post-processing */
     const composer = new EffectComposer(renderer);
@@ -360,11 +405,14 @@ export default function BadmintonScene() {
     });
 
     /* ─── Player ─── */
-    scene.add(buildPlayerSilhouette());
+    const playerGroup = buildPlayerGroup();
+    scene.add(playerGroup);
+    const racquetArm = playerGroup.getObjectByName('racquetArm') as THREE.Group;
+    const torsoMesh = playerGroup.getObjectByName('torso') as THREE.Mesh;
 
     /* ─── Camera state ─── */
     let smoothT = 0;
-    const currentLookAt = new THREE.Vector3(-3, 2.5, -1);
+    const currentLookAt = new THREE.Vector3(-2, 2, 0);
     let introComplete = false;
     let deceptionTriggered = false;
     let chromAbStrength = 0;
@@ -398,6 +446,19 @@ export default function BadmintonScene() {
       autoDeceptionActive = true;
       arcT.value = 0;
       shuttleGroup.position.copy(SHUTTLE_CURVE.getPoint(0));
+
+      // Smash animation — sync with shuttle arc
+      if (!isMobile && racquetArm) {
+        gsap.killTweensOf(racquetArm.rotation);
+        gsap.killTweensOf(torsoMesh.rotation);
+        const smashTL = gsap.timeline();
+        smashTL.to(racquetArm.rotation, { z: 1.2, duration: 0.25, ease: 'power2.out' });
+        smashTL.to(torsoMesh.rotation,  { z: 0.12, duration: 0.25, ease: 'power2.out' }, '<');
+        smashTL.to(racquetArm.rotation, { z: -0.9, duration: 0.3, ease: 'power4.out' });
+        smashTL.to(torsoMesh.rotation,  { z: -0.12, duration: 0.3, ease: 'power4.out' }, '<');
+        smashTL.to(racquetArm.rotation, { z: 0, duration: 0.8, ease: 'power1.inOut' });
+        smashTL.to(torsoMesh.rotation,  { z: 0, duration: 0.8, ease: 'power1.inOut' }, '<');
+      }
 
       // Pulse court lines gold on smash
       courtLines.children.forEach((child) => {
@@ -565,6 +626,8 @@ export default function BadmintonScene() {
       gsap.killTweensOf(arcT);
       gsap.killTweensOf(shuttleGroup.position);
       clearTimeout(deceptionTimer);
+      if (racquetArm) gsap.killTweensOf(racquetArm.rotation);
+      if (torsoMesh) gsap.killTweensOf(torsoMesh.rotation);
       renderer.dispose();
     };
   }, [scrollProgress]);
