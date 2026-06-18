@@ -20,6 +20,12 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  transpilePackages: [
+    '@react-three/fiber',
+    '@react-three/drei',
+    '@react-three/postprocessing',
+    'postprocessing',
+  ],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
@@ -29,6 +35,7 @@ const nextConfig: NextConfig = {
     ],
   },
   poweredByHeader: false,
+  serverExternalPackages: ['three'],
   experimental: {
     optimizeCss: false,
   },

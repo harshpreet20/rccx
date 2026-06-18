@@ -538,3 +538,61 @@ body {
   -webkit-backdrop-filter: blur(20px);
   border: 1px solid rgba(155,35,53,0.18);
 }
+
+/* ── 3D Scene Integration ── */
+
+/* Hero section is transparent — R3F fixed canvas shows through */
+[data-scene-section="hero"] > section {
+  background: transparent !important;
+}
+
+/* Ensure navbar always above the 3D canvas */
+nav {
+  position: relative;
+  z-index: 10;
+}
+
+/* Sections above 3D canvas — content-bearing sections keep their bg */
+[data-scene-section="about"],
+[data-scene-section="tournament"],
+[data-scene-section="roster"] {
+  position: relative;
+  z-index: 1;
+}
+
+/* Gold foil shimmer — richer version for main headings */
+@keyframes gold-foil {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.gold-foil-text {
+  background: linear-gradient(
+    105deg,
+    #8B6914 0%,
+    #C9A84C 20%,
+    #F0E0A8 40%,
+    #E2C97E 50%,
+    #C9A84C 65%,
+    #F0E0A8 80%,
+    #8B6914 100%
+  );
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: gold-foil 5s ease infinite;
+}
+
+/* Court line pulse visible on transparent sections */
+.court-glow-overlay {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 40% at 50% 100%,
+    rgba(201, 168, 76, 0.04) 0%,
+    transparent 70%
+  );
+  pointer-events: none;
+  z-index: 0;
+}

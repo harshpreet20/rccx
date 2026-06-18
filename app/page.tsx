@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { ScrollContextProvider } from '@/lib/scrollContext';
 import LoadingScreen from '@/components/layout/LoadingScreen';
 import CustomCursor from '@/components/ui/CustomCursor';
 import NavbarRCC from '@/components/layout/NavbarRCC';
@@ -13,41 +14,64 @@ import MemberRoster from '@/components/sections/MemberRoster';
 import ActivityFeed from '@/components/sections/ActivityFeed';
 import FooterRCC from '@/components/layout/FooterRCC';
 import ScoreTicker from '@/components/ui/ScoreTicker';
-
-// Existing components kept for compatibility
 import ChatBot from '@/components/ui/ChatBot';
 import SupportModal from '@/components/ui/SupportModal';
+
+// 3D scene — client-only, no SSR
+const BadmintonScene = dynamic(
+  () => import('@/components/3d/BadmintonScene'),
+  { ssr: false, loading: () => null }
+);
 
 export default function Home() {
   const [loaded, setLoaded] = useState(false);
   const [sweepKey, setSweepKey] = useState(0);
 
   useEffect(() => {
-    // Periodic gold sweep
     const interval = setInterval(() => setSweepKey(k => k + 1), 20000);
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <>
-      <CustomCursor />
-      {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
-      <div style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.6s ease' }}>
-        {/* Ambient gold sweep */}
-        <div key={sweepKey} className="gold-sweep-overlay" />
+    <ScrollContextProvider>
+      {/* 3D background canvas — fixed, z-0, warms up during loading screen */}
+      <BadmintonScene />
 
-        <NavbarRCC />
-        <HeroRCC />
-        <ScoreTicker />
-        <AboutRCC />
-        <TournamentInvite />
-        <TournamentsRCC />
-        <MemberRoster />
-        <ActivityFeed />
-        <FooterRCC />
-        <ChatBot />
-        <SupportModal />
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        <CustomCursor />
+        {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
+        <div style={{ opacity: loaded ? 1 : 0, transition: 'opacity 0.8s ease' }}>
+          {/* Ambient gold sweep */}
+          <div key={sweepKey} className="gold-sweep-overlay" />
+
+          <NavbarRCC />
+
+          <div data-scene-section="hero">
+            <HeroRCC />
+          </div>
+
+          <ScoreTicker />
+
+          <div data-scene-section="about">
+            <AboutRCC />
+          </div>
+
+          <TournamentInvite />
+
+          <div data-scene-section="tournament">
+            <TournamentsRCC />
+          </div>
+
+          <div data-scene-section="roster">
+            <MemberRoster />
+          </div>
+
+          <ActivityFeed />
+          <FooterRCC />
+          <ChatBot />
+          <SupportModal />
+        </div>
       </div>
-    </>
+    </ScrollContextProvider>
   );
 }
