@@ -14,7 +14,6 @@ const NAV_LINKS = [
 
 export default function NavbarRCC() {
   const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const pathname = usePathname();
 
@@ -23,11 +22,6 @@ export default function NavbarRCC() {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
-
-  useEffect(() => {
-    document.body.style.overflow = menuOpen ? 'hidden' : '';
-    return () => { document.body.style.overflow = ''; };
-  }, [menuOpen]);
 
   return (
     <>
@@ -144,89 +138,15 @@ export default function NavbarRCC() {
           >
             Request Membership
           </a>
-          {/* Mobile menu toggle */}
-          <button
-            onClick={() => setMenuOpen(o => !o)}
-            style={{
-              width: 36, height: 36,
-              background: 'none', border: '1px solid rgba(201,168,76,0.3)',
-              borderRadius: 2,
-              display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center',
-              gap: 5, cursor: 'pointer', padding: 8,
-            }}
+          <a
+            href="/join"
+            className="btn-gold lg:hidden"
+            style={{ padding: '8px 16px', fontSize: 10 }}
           >
-            {[0, 1, 2].map(i => (
-              <div key={i} style={{
-                width: 16, height: 1,
-                background: '#C9A84C',
-                transition: 'all 0.2s ease',
-                opacity: menuOpen && i === 1 ? 0 : 1,
-                transform: menuOpen
-                  ? i === 0 ? 'rotate(45deg) translate(4px, 4px)'
-                  : i === 2 ? 'rotate(-45deg) translate(4px, -4px)' : 'none'
-                  : 'none',
-              }} />
-            ))}
-          </button>
+            Join
+          </a>
         </div>
       </nav>
-
-      {/* Mobile drawer */}
-      <div style={{
-        position: 'fixed',
-        top: 0, right: 0, bottom: 0,
-        width: 'min(300px, 85vw)',
-        zIndex: 999,
-        background: 'rgba(10,22,40,0.98)',
-        backdropFilter: 'blur(24px)',
-        borderLeft: '1px solid rgba(201,168,76,0.15)',
-        transform: menuOpen ? 'translateX(0)' : 'translateX(100%)',
-        transition: 'transform 0.35s cubic-bezier(0.4,0,0.2,1)',
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '80px 32px 40px',
-        gap: 4,
-      }}>
-        {NAV_LINKS.map(link => (
-          <a
-            key={link.label}
-            href={link.href}
-            onClick={() => setMenuOpen(false)}
-            style={{
-              fontFamily: 'var(--font-archivo), Arial, sans-serif',
-              fontSize: 22,
-              color: pathname === link.href ? '#C9A84C' : 'rgba(245,240,232,0.7)',
-              textDecoration: 'none',
-              padding: '14px 0',
-              borderBottom: '1px solid rgba(201,168,76,0.08)',
-              fontVariant: 'small-caps',
-              letterSpacing: '0.12em',
-            }}
-          >
-            {link.label}
-          </a>
-        ))}
-        <a
-          href="/join"
-          className="btn-gold"
-          style={{ marginTop: 24, textAlign: 'center', justifyContent: 'center' }}
-          onClick={() => setMenuOpen(false)}
-        >
-          Request Membership
-        </a>
-      </div>
-
-      {/* Overlay */}
-      {menuOpen && (
-        <div
-          onClick={() => setMenuOpen(false)}
-          style={{
-            position: 'fixed', inset: 0, zIndex: 998,
-            background: 'rgba(0,0,0,0.6)',
-          }}
-        />
-      )}
     </>
   );
 }
