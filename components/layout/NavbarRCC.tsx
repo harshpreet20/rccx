@@ -50,54 +50,14 @@ export default function NavbarRCC() {
           onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.filter = 'drop-shadow(0 0 8px rgba(201,168,76,0.45))'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.filter = 'none'; }}
         >
-          <svg
-            width="44"
-            height="44"
-            viewBox="0 0 44 44"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            aria-label="RCC — Racquets Club Community"
-            style={{ flexShrink: 0 }}
-          >
-            <circle cx="22" cy="22" r="20" stroke="#C9A84C" strokeWidth="1" />
-            <circle cx="22" cy="22" r="17.5" stroke="rgba(201,168,76,0.3)" strokeWidth="0.6" />
-            <line x1="7.5" y1="9.5" x2="16" y2="9.5" stroke="#9B2335" strokeWidth="0.7" />
-            <line x1="28" y1="9.5" x2="36.5" y2="9.5" stroke="#9B2335" strokeWidth="0.7" />
-            <circle cx="22" cy="8" r="1.4" fill="#C9A84C" />
-            <line x1="19" y1="11" x2="22" y2="9.3" stroke="#C9A84C" strokeWidth="0.8" />
-            <line x1="25" y1="11" x2="22" y2="9.3" stroke="#C9A84C" strokeWidth="0.8" />
-            <line x1="20" y1="12" x2="22" y2="9.3" stroke="#C9A84C" strokeWidth="0.65" />
-            <line x1="24" y1="12" x2="22" y2="9.3" stroke="#C9A84C" strokeWidth="0.65" />
-            <line x1="22" y1="12.2" x2="22" y2="9.3" stroke="#C9A84C" strokeWidth="0.65" />
-            <text
-              x="22"
-              y="26.5"
-              textAnchor="middle"
-              fontFamily="Georgia, serif"
-              fontSize="13"
-              fontWeight="600"
-              fill="#C9A84C"
-              letterSpacing="-0.5"
-            >
-              RCC
-            </text>
-            <text x="8.5" y="29.5" fontFamily="Arial, sans-serif" fontSize="4" fill="rgba(201,168,76,0.5)" letterSpacing="0.2">EST</text>
-            <text x="28.5" y="29.5" fontFamily="Arial, sans-serif" fontSize="4" fill="rgba(201,168,76,0.5)" letterSpacing="0.2">2024</text>
-            <line x1="10" y1="34" x2="34" y2="34" stroke="#9B2335" strokeWidth="0.5" />
-            <text
-              x="22"
-              y="38.5"
-              textAnchor="middle"
-              fontFamily="Arial, sans-serif"
-              fontSize="4.8"
-              fontWeight="700"
-              fill="#9B2335"
-              letterSpacing="1.2"
-            >
-              DELHI
-            </text>
-            <text x="22" y="43" textAnchor="middle" fontSize="3.5" fill="#C9A84C">&#9733;</text>
-          </svg>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/rcc-crest.png"
+            alt="RCC — Racquets Club Community"
+            width={44}
+            height={44}
+            style={{ flexShrink: 0, objectFit: 'contain' }}
+          />
 
           <div className="hidden sm:block">
             <div style={{
