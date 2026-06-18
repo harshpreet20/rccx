@@ -9,11 +9,11 @@ const securityHeaders = [
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://unpkg.com https://vercel.live",
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.openai.com https://graph.instagram.com https://graph.facebook.com",
+      "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.openai.com https://graph.instagram.com https://graph.facebook.com https://vercel.live wss://ws-us3.pusher.com",
       "frame-ancestors 'none'",
     ].join('; '),
   },

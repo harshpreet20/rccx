@@ -2,7 +2,6 @@
 
 import { useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { MeshReflectorMaterial } from '@react-three/drei';
 import * as THREE from 'three';
 
 // Regulation badminton court: 13.4m × 6.1m
@@ -102,14 +101,10 @@ export default function CourtFloor() {
       {/* Main floor */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[CW, CH]} />
-        <MeshReflectorMaterial
-          mirror={0.25}
-          roughness={0.65}
-          resolution={512}
-          blur={[300, 80]}
-          mixBlur={0.9}
-          mixStrength={1.0}
-          color="#060E1C"
+        <meshStandardMaterial
+          color={0x060e1c}
+          roughness={0.55}
+          metalness={0.4}
         />
       </mesh>
 

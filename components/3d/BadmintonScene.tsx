@@ -2,7 +2,6 @@
 
 import { useRef, useState, useCallback } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Environment } from '@react-three/drei';
 import * as THREE from 'three';
 import Lighting, { type LightingHandles } from './Lighting';
 import CourtFloor from './CourtFloor';
@@ -78,7 +77,6 @@ export default function BadmintonScene() {
         shadows
       >
         <Lighting ref={lightingRef} />
-        <Environment preset="night" background={false} />
         <CourtFloor />
         <PlayerSilhouette />
         <ShuttlecockMesh ref={shuttleRef} />
