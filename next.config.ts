@@ -14,18 +14,13 @@ const securityHeaders = [
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",
       "connect-src 'self' https://*.supabase.co https://api.anthropic.com https://api.openai.com https://graph.instagram.com https://graph.facebook.com https://vercel.live wss://ws-us3.pusher.com",
+      "frame-src 'self' https://vercel.live",
       "frame-ancestors 'none'",
     ].join('; '),
   },
 ];
 
 const nextConfig: NextConfig = {
-  transpilePackages: [
-    '@react-three/fiber',
-    '@react-three/drei',
-    '@react-three/postprocessing',
-    'postprocessing',
-  ],
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },

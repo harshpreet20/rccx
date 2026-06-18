@@ -1,100 +1,515 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import Lighting, { type LightingHandles } from './Lighting';
-import CourtFloor from './CourtFloor';
-import PlayerSilhouette from './PlayerSilhouette';
-import ShuttlecockMesh, { type ShuttlecockHandles } from './ShuttlecockMesh';
-import VolumetricBeams from './VolumetricBeams';
-import CameraRig from './CameraRig';
-import StadiumIntro from './StadiumIntro';
-import ScenePostFX from './ScenePostFX';
+import { gsap } from 'gsap';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { useScrollContext } from '@/lib/scrollContext';
 
-// Deception moment: chromatic + camera shake — runs inside the Canvas
-function DeceptionEffect({ triggerRef }: { triggerRef: React.MutableRefObject<(() => void) | null> }) {
-  const shakeFrames = useRef(0);
-  const chromOffset = useRef(0);
+/* ─────────────────────────────────────────────────────────────
+   Regulation badminton court: 13.4m × 6.1m
+   Scale: 1 unit = 0.5m  →  26.8 × 12.2 units
+   ───────────────────────────────────────────────────────────── */
+const CW = 26.8;
+const CH = 12.2;
+const SINGLES_HALF = 5.18;
+const DOUBLES_HALF = CH / 2;
+const SSL = 3.96; // short service line offset
+const LSL_D = CW / 2 - 0.76; // doubles long service line
+const GOLD = 0xc9a84c;
+const GOLD_WARM = 0xe2c97e;
+const NAVY = 0x060e1c;
+const CRIMSON = 0x9b2335;
 
-  triggerRef.current = () => {
-    shakeFrames.current = 12;
-    chromOffset.current = 0.006;
-  };
+/* Camera path — broadcast crane */
+const CAM_CURVE = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(0, 28, 0),
+  new THREE.Vector3(0, 20, 10),
+  new THREE.Vector3(-2, 14, 18),
+  new THREE.Vector3(-3, 8, 14),
+  new THREE.Vector3(2, 5, 8),
+  new THREE.Vector3(-1, 7, 2),
+  new THREE.Vector3(0, 10, -6),
+  new THREE.Vector3(3, 12, -14),
+  new THREE.Vector3(0, 22, -20),
+]);
 
-  useFrame(({ camera }) => {
-    if (shakeFrames.current > 0) {
-      shakeFrames.current--;
-      const s = (shakeFrames.current / 12) * 0.06;
-      camera.position.x += (Math.random() - 0.5) * s;
-      camera.position.y += (Math.random() - 0.5) * s * 0.5;
-    }
-    if (chromOffset.current > 0) {
-      chromOffset.current = Math.max(0, chromOffset.current - 0.0004);
-    }
+/* Shuttle deception arc */
+const SHUTTLE_CURVE = new THREE.CatmullRomCurve3([
+  new THREE.Vector3(-4, 2.5, -2),
+  new THREE.Vector3(-1, 5.5, 1),
+  new THREE.Vector3(2, 4.8, 3),
+  new THREE.Vector3(4.5, 1.2, 5),
+]);
+
+/* Look-at targets per section */
+const LOOK_TARGETS = [
+  new THREE.Vector3(0, 0, 0),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(2, 3, 4),
+  new THREE.Vector3(4, 1.5, 4),
+  new THREE.Vector3(0, 1, 0),
+  new THREE.Vector3(0, 2, -2),
+  new THREE.Vector3(0, 0, 0),
+];
+
+/* ─── Geometry builders ─── */
+
+function buildCourtLines(): THREE.Group {
+  const group = new THREE.Group();
+  const Y = 0.012;
+  const mat = new THREE.MeshStandardMaterial({
+    color: GOLD, emissive: GOLD, emissiveIntensity: 3,
+    roughness: 0.1, metalness: 0.8,
   });
 
-  return null;
+  const strip = (x: number, z: number, w: number, h: number) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat.clone());
+    m.rotation.x = -Math.PI / 2;
+    m.position.set(x, Y, z);
+    return m;
+  };
+
+  // Doubles boundary
+  group.add(strip(0, -DOUBLES_HALF, CW, 0.05));
+  group.add(strip(0, DOUBLES_HALF, CW, 0.05));
+  group.add(strip(-CW / 2, 0, 0.05, CH));
+  group.add(strip(CW / 2, 0, 0.05, CH));
+  // Singles side lines
+  group.add(strip(0, -SINGLES_HALF, CW, 0.04));
+  group.add(strip(0, SINGLES_HALF, CW, 0.04));
+  // Net line
+  group.add(strip(0, 0, 0.05, CH));
+  // Centre line
+  group.add(strip(0, 0, CW, 0.04));
+  // Short service lines
+  group.add(strip(-SSL, 0, 0.04, SINGLES_HALF * 2));
+  group.add(strip(SSL, 0, 0.04, SINGLES_HALF * 2));
+  // Doubles long service lines
+  group.add(strip(-LSL_D, 0, 0.04, CH));
+  group.add(strip(LSL_D, 0, 0.04, CH));
+
+  return group;
 }
 
-// Mobile detection — disable heavy effects on touch devices
+function buildNet(): THREE.Group {
+  const group = new THREE.Group();
+  group.position.y = 0.775;
+
+  // Net frame wireframe
+  const netGeo = new THREE.BoxGeometry(CH, 1.55, 0.04);
+  const netMat = new THREE.MeshBasicMaterial({ color: GOLD, wireframe: true, opacity: 0.5, transparent: true });
+  group.add(new THREE.Mesh(netGeo, netMat));
+
+  // Posts
+  const postMat = new THREE.MeshStandardMaterial({ color: GOLD, metalness: 0.9, roughness: 0.1 });
+  const postGeo = new THREE.CylinderGeometry(0.04, 0.04, 1.55, 8);
+  const p1 = new THREE.Mesh(postGeo, postMat);
+  p1.position.z = -DOUBLES_HALF;
+  const p2 = new THREE.Mesh(postGeo, postMat);
+  p2.position.z = DOUBLES_HALF;
+  group.add(p1, p2);
+  return group;
+}
+
+function buildShuttlecock(): THREE.Group {
+  const group = new THREE.Group();
+
+  // Cork
+  const cork = new THREE.Mesh(
+    new THREE.SphereGeometry(0.18, 16, 12),
+    new THREE.MeshStandardMaterial({ color: 0xf5f0e8, roughness: 0.4, metalness: 0.1 })
+  );
+  group.add(cork);
+
+  // Skirt
+  const skirt = new THREE.Mesh(
+    new THREE.ConeGeometry(0.45, 0.8, 16, 1, true),
+    new THREE.MeshStandardMaterial({ color: 0xffffff, transparent: true, opacity: 0.85, side: THREE.DoubleSide })
+  );
+  skirt.position.y = 0.4;
+  group.add(skirt);
+
+  // 16 feather fins
+  const N = 16;
+  const verts: number[] = [];
+  const indices: number[] = [];
+  for (let i = 0; i < N; i++) {
+    const angle = (i / N) * Math.PI * 2;
+    const rimR = 0.44;
+    const rimY = 0.8;
+    const bx = Math.cos(angle) * rimR;
+    const bz = Math.sin(angle) * rimR;
+    const ax = Math.cos(angle) * 0.7;
+    const ay = rimY + 0.55;
+    const az = Math.sin(angle) * 0.7;
+    const sAngle = angle + 0.18;
+    const sx = Math.cos(sAngle) * 0.52;
+    const sz = Math.sin(sAngle) * 0.52;
+    const base = i * 3;
+    verts.push(bx, rimY, bz, ax, ay, az, sx, rimY + 0.28, sz);
+    indices.push(base, base + 1, base + 2);
+  }
+  const featherGeo = new THREE.BufferGeometry();
+  featherGeo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+  featherGeo.setIndex(indices);
+  featherGeo.computeVertexNormals();
+  const feathers = new THREE.Mesh(
+    featherGeo,
+    new THREE.MeshStandardMaterial({ color: 0xf5f0e8, side: THREE.DoubleSide, roughness: 0.6 })
+  );
+  group.add(feathers);
+
+  return group;
+}
+
+function buildPlayerSilhouette(): THREE.Mesh {
+  const parts: THREE.BufferGeometry[] = [];
+  const T = (x: number, y: number, z: number) => new THREE.Matrix4().makeTranslation(x, y, z);
+  const R = (axis: 'x' | 'y' | 'z', angle: number) => {
+    const m = new THREE.Matrix4();
+    if (axis === 'x') m.makeRotationX(angle);
+    if (axis === 'y') m.makeRotationY(angle);
+    if (axis === 'z') m.makeRotationZ(angle);
+    return m;
+  };
+  const add = (geo: THREE.BufferGeometry, mat: THREE.Matrix4) => {
+    geo.applyMatrix4(mat); parts.push(geo);
+  };
+
+  add(new THREE.BoxGeometry(0.7, 1.2, 0.35), T(0, 1.5, 0));
+  add(new THREE.SphereGeometry(0.26, 8, 6), T(0.1, 2.55, 0));
+  add(new THREE.BoxGeometry(0.22, 0.7, 0.2), T(0.55, 2.1, 0).multiply(R('z', -Math.PI * 0.65)));
+  add(new THREE.BoxGeometry(0.18, 0.65, 0.18), T(0.85, 2.7, 0).multiply(R('z', -Math.PI * 0.85)));
+  add(new THREE.BoxGeometry(0.12, 0.12, 0.12), T(1.05, 3.3, 0));
+  add(new THREE.CylinderGeometry(0.025, 0.025, 0.7, 6), T(1.2, 3.65, 0).multiply(R('z', -0.2)));
+  add(new THREE.BoxGeometry(0.5, 0.55, 0.04), T(1.25, 4.1, 0).multiply(R('z', -0.15)));
+  add(new THREE.BoxGeometry(0.22, 0.65, 0.2), T(-0.55, 1.9, 0).multiply(R('z', Math.PI * 0.35)));
+  add(new THREE.BoxGeometry(0.18, 0.55, 0.18), T(-0.85, 1.55, 0).multiply(R('z', Math.PI * 0.55)));
+  add(new THREE.BoxGeometry(0.3, 0.85, 0.3), T(0.22, 0.55, 0.2).multiply(R('x', 0.35)));
+  add(new THREE.BoxGeometry(0.26, 0.7, 0.26), T(0.22, -0.1, 0.45).multiply(R('x', -0.3)));
+  add(new THREE.BoxGeometry(0.3, 0.85, 0.3), T(-0.22, 0.45, -0.3).multiply(R('x', -0.45)));
+  add(new THREE.BoxGeometry(0.26, 0.75, 0.26), T(-0.22, -0.15, -0.55).multiply(R('x', 0.4)));
+
+  const merged = mergeGeometries(parts);
+  const mesh = new THREE.Mesh(
+    merged,
+    new THREE.MeshStandardMaterial({ color: 0x0a1628, roughness: 0.4, metalness: 0.2 })
+  );
+  mesh.position.set(-5, 0.5, -3);
+  mesh.rotation.y = 0.3;
+  mesh.castShadow = true;
+  return mesh;
+}
+
+function buildDustParticles(origin: THREE.Vector3, count: number): { points: THREE.Points; velocities: Float32Array } {
+  const positions = new Float32Array(count * 3);
+  const velocities = new Float32Array(count);
+  for (let i = 0; i < count; i++) {
+    const r = Math.random() * 2.5;
+    const angle = Math.random() * Math.PI * 2;
+    const d = Math.random();
+    positions[i * 3] = origin.x + Math.cos(angle) * r * d;
+    positions[i * 3 + 1] = origin.y - d * 14;
+    positions[i * 3 + 2] = origin.z + Math.sin(angle) * r * d;
+    velocities[i] = 0.002 + Math.random() * 0.004;
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  const mat = new THREE.PointsMaterial({
+    color: 0xfff5e0, size: 0.04, transparent: true, opacity: 0.35,
+    sizeAttenuation: true, blending: THREE.AdditiveBlending, depthWrite: false,
+  });
+  return { points: new THREE.Points(geo, mat), velocities };
+}
+
+/* ─── Main component ─── */
+
 const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
 
 export default function BadmintonScene() {
-  const lightingRef = useRef<LightingHandles | null>(null);
-  const shuttleRef = useRef<ShuttlecockHandles | null>(null);
-  const introCompleteRef = useRef(false);
-  const deceptionTriggerRef = useRef<(() => void) | null>(null);
-  const [introComplete, setIntroComplete] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { scrollProgress } = useScrollContext();
 
-  const handleIntroComplete = useCallback(() => {
-    introCompleteRef.current = true;
-    setIntroComplete(true);
-  }, []);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-  const handleDeception = useCallback(() => {
-    deceptionTriggerRef.current?.();
-  }, []);
+    /* Renderer */
+    const renderer = new THREE.WebGLRenderer({
+      canvas, antialias: !isMobile, alpha: false,
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, isMobile ? 1 : 1.5));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.1;
+
+    /* Scene + camera */
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(NAVY);
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 300);
+    camera.position.set(0, 28, 0);
+    camera.lookAt(0, 0, 0);
+
+    /* Post-processing */
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    if (!isMobile) {
+      const bloom = new UnrealBloomPass(
+        new THREE.Vector2(window.innerWidth, window.innerHeight),
+        1.4, 0.65, 0.55
+      );
+      composer.addPass(bloom);
+    }
+    composer.addPass(new OutputPass());
+
+    /* ─── Lights ─── */
+    const FLOOD_POSITIONS: [number, number, number][] = [
+      [-6, 14, -5], [6, 14, -5], [-6, 14, 5], [6, 14, 5]
+    ];
+    const floods: THREE.SpotLight[] = FLOOD_POSITIONS.map(([x, y, z]) => {
+      const light = new THREE.SpotLight(0xfff5e0, 0, 0, 0.55, 0.3);
+      light.position.set(x, y, z);
+      light.castShadow = true;
+      light.shadow.mapSize.set(512, 512);
+      scene.add(light);
+      scene.add(light.target);
+      return light;
+    });
+
+    const goldKey = new THREE.SpotLight(GOLD, 80, 0, 0.4, 0.5);
+    goldKey.position.set(8, 12, 8);
+    scene.add(goldKey); scene.add(goldKey.target);
+
+    const navyFill = new THREE.DirectionalLight(0x1a3060, 6);
+    navyFill.position.set(-10, 6, -5);
+    scene.add(navyFill);
+
+    const crimsonRim = new THREE.SpotLight(CRIMSON, 50, 0, 0.55, 0.6);
+    crimsonRim.position.set(-6, 3, -12);
+    scene.add(crimsonRim); scene.add(crimsonRim.target);
+
+    scene.add(new THREE.AmbientLight(0x0a1628, 0.4));
+
+    /* ─── Court ─── */
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(CW, CH),
+      new THREE.MeshStandardMaterial({ color: NAVY, roughness: 0.55, metalness: 0.35 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const courtLines = buildCourtLines();
+    scene.add(courtLines);
+    scene.add(buildNet());
+
+    /* ─── Volumetric beams ─── */
+    const dustSystems: { points: THREE.Points; velocities: Float32Array; origin: THREE.Vector3 }[] = [];
+    if (!isMobile) {
+      FLOOD_POSITIONS.forEach(([x, y, z]) => {
+        const origin = new THREE.Vector3(x, y, z);
+        // Beam cone
+        const cone = new THREE.Mesh(
+          new THREE.ConeGeometry(3.5, 14, 16, 1, true),
+          new THREE.MeshBasicMaterial({
+            color: 0xfff5e0, transparent: true, opacity: 0.025,
+            side: THREE.BackSide, depthWrite: false, blending: THREE.AdditiveBlending,
+          })
+        );
+        cone.position.set(x, y - 7, z);
+        cone.rotation.x = Math.PI;
+        scene.add(cone);
+        // Dust
+        const { points, velocities } = buildDustParticles(origin, 100);
+        scene.add(points);
+        dustSystems.push({ points, velocities, origin });
+      });
+    }
+
+    /* ─── Shuttlecock ─── */
+    const shuttleGroup = buildShuttlecock();
+    shuttleGroup.position.copy(SHUTTLE_CURVE.getPoint(0));
+    scene.add(shuttleGroup);
+
+    /* Trail */
+    const TRAIL_LEN = 20;
+    const trailPositions = new Float32Array(TRAIL_LEN * 3);
+    const trailGeo = new THREE.BufferGeometry();
+    trailGeo.setAttribute('position', new THREE.BufferAttribute(trailPositions, 3));
+    const trail = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({
+      color: GOLD_WARM, transparent: true, opacity: 0.5,
+    }));
+    scene.add(trail);
+    const trailBuffer: THREE.Vector3[] = Array.from({ length: TRAIL_LEN }, () => new THREE.Vector3().copy(shuttleGroup.position));
+
+    /* ─── Player ─── */
+    scene.add(buildPlayerSilhouette());
+
+    /* ─── Camera state ─── */
+    let smoothT = 0;
+    const currentLookAt = new THREE.Vector3(0, 0, 0);
+    let introComplete = false;
+    let deceptionTriggered = false;
+    let chromAbStrength = 0;
+    let shakeFrames = 0;
+
+    /* ─── Stadium intro sequence ─── */
+    const flickerOn = (light: THREE.SpotLight, targetIntensity: number, delay: number) => {
+      const proxy = { intensity: 0 };
+      const tl = gsap.timeline({ delay });
+      tl.to(proxy, { intensity: targetIntensity * 0.3, duration: 0.05, onUpdate: () => { light.intensity = proxy.intensity; } })
+        .to(proxy, { intensity: 0, duration: 0.04, onUpdate: () => { light.intensity = proxy.intensity; } })
+        .to(proxy, { intensity: targetIntensity * 0.7, duration: 0.06, onUpdate: () => { light.intensity = proxy.intensity; } })
+        .to(proxy, { intensity: 0, duration: 0.03, onUpdate: () => { light.intensity = proxy.intensity; } })
+        .to(proxy, { intensity: targetIntensity * 0.5, duration: 0.04, onUpdate: () => { light.intensity = proxy.intensity; } })
+        .to(proxy, { intensity: 0, duration: 0.05, onUpdate: () => { light.intensity = proxy.intensity; } })
+        .to(proxy, { intensity: targetIntensity, duration: 0.18, ease: 'power2.out', onUpdate: () => { light.intensity = proxy.intensity; } });
+      return tl;
+    };
+
+    const introTL = gsap.timeline({ delay: 0.6, onComplete: () => { introComplete = true; } });
+    introTL.add(flickerOn(floods[0], 180, 0));
+    introTL.add(flickerOn(floods[1], 180, 0), '+=0.3');
+    introTL.add(flickerOn(floods[2], 180, 0), '+=0.2');
+    introTL.add(flickerOn(floods[3], 180, 0), '-=0.3');
+
+    /* ─── Animation loop ─── */
+    let frameId: number;
+    let t2 = 0;
+
+    const prevShuttlePos = new THREE.Vector3().copy(shuttleGroup.position);
+
+    const animate = () => {
+      frameId = requestAnimationFrame(animate);
+      t2 += 0.008;
+
+      if (introComplete) {
+        const targetT = scrollProgress.current;
+        smoothT += (targetT - smoothT) * 0.055;
+        const t = Math.max(0, Math.min(1, smoothT));
+
+        // Camera crane path
+        const camPos = CAM_CURVE.getPoint(t);
+        camera.position.lerp(camPos, 0.05);
+
+        // Shuttle arc
+        const st = Math.min(t / 0.45, 1);
+        const shuttlePos = SHUTTLE_CURVE.getPoint(st);
+        shuttleGroup.position.lerp(shuttlePos, 0.08);
+
+        // Deception trigger at 30%
+        if (!deceptionTriggered && t > 0.28) {
+          deceptionTriggered = true;
+          chromAbStrength = 0.006;
+          shakeFrames = 12;
+          // Pulse court lines
+          courtLines.children.forEach((child) => {
+            const mesh = child as THREE.Mesh;
+            const mat = mesh.material as THREE.MeshStandardMaterial;
+            gsap.to(mat, { emissiveIntensity: 9, duration: 0.1, yoyo: true, repeat: 3 });
+          });
+        }
+
+        // Look-at
+        const lookIdx = t * (LOOK_TARGETS.length - 1);
+        const lf = Math.floor(lookIdx);
+        const lfrac = lookIdx - lf;
+        const from = LOOK_TARGETS[Math.min(lf, LOOK_TARGETS.length - 1)];
+        const to = LOOK_TARGETS[Math.min(lf + 1, LOOK_TARGETS.length - 1)];
+        currentLookAt.lerp(from.clone().lerp(to, lfrac), 0.05);
+      }
+
+      // Shuttle idle spin + trail
+      shuttleGroup.rotation.y += 0.08;
+
+      const moved = shuttleGroup.position.distanceTo(prevShuttlePos) > 0.001;
+      if (moved) {
+        trailBuffer.unshift(shuttleGroup.position.clone());
+        trailBuffer.length = TRAIL_LEN;
+        prevShuttlePos.copy(shuttleGroup.position);
+      }
+      for (let i = 0; i < TRAIL_LEN; i++) {
+        const p = trailBuffer[i] ?? shuttleGroup.position;
+        trailPositions[i * 3] = p.x;
+        trailPositions[i * 3 + 1] = p.y;
+        trailPositions[i * 3 + 2] = p.z;
+      }
+      trailGeo.attributes.position.needsUpdate = true;
+
+      // Camera screen shake
+      if (shakeFrames > 0) {
+        shakeFrames--;
+        const s = (shakeFrames / 12) * 0.08;
+        camera.position.x += (Math.random() - 0.5) * s;
+        camera.position.y += (Math.random() - 0.5) * s * 0.5;
+      }
+
+      // Court line pulse
+      courtLines.children.forEach((child) => {
+        const mesh = child as THREE.Mesh;
+        const mat = mesh.material as THREE.MeshStandardMaterial;
+        if (!deceptionTriggered) {
+          mat.emissiveIntensity = 2.5 + Math.sin(t2 * 0.7) * 1.5;
+        }
+      });
+
+      // Dust particles
+      dustSystems.forEach(({ points, velocities, origin }) => {
+        const arr = points.geometry.attributes.position.array as Float32Array;
+        const count = arr.length / 3;
+        for (let i = 0; i < count; i++) {
+          arr[i * 3 + 1] += velocities[i];
+          if (arr[i * 3 + 1] > origin.y) {
+            const r = Math.random() * 2.5;
+            const angle = Math.random() * Math.PI * 2;
+            arr[i * 3] = origin.x + Math.cos(angle) * r;
+            arr[i * 3 + 1] = origin.y - 14;
+            arr[i * 3 + 2] = origin.z + Math.sin(angle) * r;
+          }
+        }
+        points.geometry.attributes.position.needsUpdate = true;
+      });
+
+      camera.lookAt(currentLookAt);
+      composer.render();
+    };
+    animate();
+
+    /* Resize */
+    const onResize = () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      composer.setSize(window.innerWidth, window.innerHeight);
+    };
+    window.addEventListener('resize', onResize);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      window.removeEventListener('resize', onResize);
+      introTL.kill();
+      renderer.dispose();
+    };
+  }, [scrollProgress]);
 
   return (
-    <>
-      <Canvas
-        style={{
-          position: 'fixed',
-          inset: 0,
-          zIndex: 0,
-          pointerEvents: 'none',
-          background: '#060E1C',
-        }}
-        camera={{ position: [0, 28, 0], fov: 45, near: 0.1, far: 300 }}
-        gl={{
-          antialias: !isMobile,
-          alpha: false,
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.1,
-        }}
-        dpr={isMobile ? [1, 1] : [1, 1.5]}
-        shadows
-      >
-        <Lighting ref={lightingRef} />
-        <CourtFloor />
-        <PlayerSilhouette />
-        <ShuttlecockMesh ref={shuttleRef} />
-        {!isMobile && <VolumetricBeams />}
-        <CameraRig
-          shuttleGroupRef={shuttleRef.current?.groupRef ?? { current: null }}
-          introCompleteRef={introCompleteRef}
-          onDeceptionTrigger={handleDeception}
-        />
-        <DeceptionEffect triggerRef={deceptionTriggerRef} />
-        {!isMobile && <ScenePostFX />}
-      </Canvas>
-
-      {/* Stadium intro sequence — runs once after loading screen */}
-      <StadiumIntro
-        lightingRef={lightingRef}
-        onComplete={handleIntroComplete}
-      />
-    </>
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: 'none',
+        width: '100%',
+        height: '100%',
+      }}
+    />
   );
 }
