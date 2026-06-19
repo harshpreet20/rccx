@@ -78,6 +78,54 @@ export default function HeroRCC() {
         background: 'transparent', // R3F canvas shows through
       }}
     >
+      {/* Falling shuttles — continuous ambient loop */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 1, overflow: 'hidden' }}>
+        {[
+          { left: '8%',  delay: '0s',   dur: '3.8s', size: 18 },
+          { left: '22%', delay: '1.2s', dur: '4.5s', size: 14 },
+          { left: '38%', delay: '0.5s', dur: '3.2s', size: 20 },
+          { left: '55%', delay: '2.1s', dur: '4.9s', size: 16 },
+          { left: '71%', delay: '0.9s', dur: '3.6s', size: 12 },
+          { left: '85%', delay: '1.7s', dur: '4.1s', size: 18 },
+          { left: '93%', delay: '3.0s', dur: '3.4s', size: 14 },
+        ].map((s, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            top: '-60px',
+            left: s.left,
+            width: s.size,
+            height: s.size * 1.6,
+            animation: `shuttle-fall ${s.dur} ${s.delay} linear infinite`,
+          }}>
+            {/* Cork base */}
+            <div style={{
+              position: 'absolute',
+              bottom: 0,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              width: s.size * 0.55,
+              height: s.size * 0.55,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 35% 35%, #E2C97E, #9B6B1A)',
+              boxShadow: '0 0 4px rgba(201,168,76,0.4)',
+            }} />
+            {/* Feathers */}
+            {[0, 36, 72, 108, 144, 180, 216, 252, 288, 324].map((deg, fi) => (
+              <div key={fi} style={{
+                position: 'absolute',
+                bottom: s.size * 0.4,
+                left: '50%',
+                width: 1,
+                height: s.size * 0.9,
+                transformOrigin: 'bottom center',
+                transform: `translateX(-50%) rotate(${deg}deg) perspective(60px) rotateX(12deg)`,
+                background: `linear-gradient(to top, rgba(201,168,76,0.7), rgba(245,240,232,0.15))`,
+              }} />
+            ))}
+          </div>
+        ))}
+      </div>
+
       {/* Radial vignette to blend content area */}
       <div style={{
         position: 'absolute',
@@ -209,6 +257,12 @@ export default function HeroRCC() {
         @keyframes scroll-pulse {
           0%, 100% { opacity: 0.4; transform: scaleY(1); }
           50% { opacity: 1; transform: scaleY(0.8); }
+        }
+        @keyframes shuttle-fall {
+          0%   { transform: translateY(0)    rotate(0deg);   opacity: 0; }
+          8%   { opacity: 0.55; }
+          85%  { opacity: 0.45; }
+          100% { transform: translateY(110vh) rotate(360deg); opacity: 0; }
         }
       `}</style>
     </section>
