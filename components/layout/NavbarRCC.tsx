@@ -38,9 +38,9 @@ export default function NavbarRCC() {
           padding: '0 clamp(16px, 4vw, 60px)',
           justifyContent: 'space-between',
           transition: 'background 0.4s ease, border-color 0.4s ease',
-          background: scrolled ? 'rgba(10,22,40,0.95)' : 'transparent',
-          backdropFilter: scrolled ? 'blur(20px)' : 'none',
-          WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
+          background: 'rgba(0,0,0,0.72)',
+          backdropFilter: 'blur(14px)',
+          WebkitBackdropFilter: 'blur(14px)',
           borderBottom: 'none',
         }}
       >
@@ -152,7 +152,7 @@ export default function NavbarRCC() {
         left: 0,
         right: 0,
         height: 18,
-        background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)',
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.65) 0%, transparent 100%)',
         zIndex: 999,
         pointerEvents: 'none',
       }} />
