@@ -31,7 +31,7 @@ export default function NavbarRCC() {
         style={{
           position: 'fixed',
           top: 0, left: 0, right: 0,
-          height: 77,
+          height: 69,
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
@@ -54,8 +54,8 @@ export default function NavbarRCC() {
           <Image
             src="/rcc-logo2.png"
             alt="RCC — Racquets Club Community"
-            width={62}
-            height={62}
+            width={74}
+            height={74}
             priority
             style={{ flexShrink: 0, objectFit: 'contain' }}
           />
@@ -92,7 +92,7 @@ export default function NavbarRCC() {
               href={link.href}
               style={{
                 fontFamily: 'var(--font-archivo), Arial, sans-serif',
-                fontSize: 19,
+                fontSize: 17,
                 letterSpacing: '0.12em',
                 color: pathname === link.href ? '#C9A84C' : 'rgba(245,240,232,0.7)',
                 textDecoration: 'none',
