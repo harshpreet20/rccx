@@ -130,7 +130,7 @@ export default function HeroRCC() {
       <div style={{
         position: 'absolute',
         inset: 0,
-        background: 'radial-gradient(ellipse 80% 80% at 50% 40%, rgba(6,14,28,0.1) 0%, rgba(6,14,28,0.55) 100%)',
+        background: 'linear-gradient(rgba(0,0,0,0.22), rgba(0,0,0,0.22)), radial-gradient(ellipse 80% 80% at 50% 40%, rgba(6,14,28,0.1) 0%, rgba(6,14,28,0.55) 100%)',
         pointerEvents: 'none',
       }} />
 

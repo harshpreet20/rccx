@@ -52,10 +52,10 @@ export default function NavbarRCC() {
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/rcc-crest.png"
+            src="/rcc-logo2.png"
             alt="RCC — Racquets Club Community"
-            width={44}
-            height={44}
+            width={52}
+            height={52}
             style={{ flexShrink: 0, objectFit: 'contain' }}
           />
 
@@ -91,7 +91,7 @@ export default function NavbarRCC() {
               href={link.href}
               style={{
                 fontFamily: 'var(--font-archivo), Arial, sans-serif',
-                fontSize: 14,
+                fontSize: 16,
                 letterSpacing: '0.12em',
                 color: pathname === link.href ? '#C9A84C' : 'rgba(245,240,232,0.7)',
                 textDecoration: 'none',
