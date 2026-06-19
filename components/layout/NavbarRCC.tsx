@@ -41,7 +41,7 @@ export default function NavbarRCC() {
           background: scrolled ? 'rgba(10,22,40,0.95)' : 'transparent',
           backdropFilter: scrolled ? 'blur(20px)' : 'none',
           WebkitBackdropFilter: scrolled ? 'blur(20px)' : 'none',
-          borderBottom: scrolled ? '1px solid rgba(201,168,76,0.12)' : '1px solid transparent',
+          borderBottom: 'none',
         }}
       >
         {/* Logo */}
@@ -57,7 +57,7 @@ export default function NavbarRCC() {
             width={74}
             height={74}
             priority
-            style={{ flexShrink: 0, objectFit: 'contain' }}
+            style={{ flexShrink: 0, objectFit: 'contain', marginTop: 10 }}
           />
 
           <div className="hidden sm:block">
@@ -144,6 +144,18 @@ export default function NavbarRCC() {
           </a>
         </div>
       </nav>
+
+      {/* Separator strip — black vignette line below navbar */}
+      <div style={{
+        position: 'fixed',
+        top: 69,
+        left: 0,
+        right: 0,
+        height: 18,
+        background: 'linear-gradient(to bottom, rgba(0,0,0,0.55) 0%, transparent 100%)',
+        zIndex: 999,
+        pointerEvents: 'none',
+      }} />
     </>
   );
 }
