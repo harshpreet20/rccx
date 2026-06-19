@@ -177,10 +177,9 @@ function setup({ scene, camera, renderer, container, reducedMotion }: SceneConte
   }
 
   // Central column
-  trophy.add(Object.assign(
-    new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.2, 24), frameMat),
-    { position: new THREE.Vector3(0, 1.6, 0) }
-  ));
+  const column = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.065, 3.2, 24), frameMat);
+  column.position.set(0, 1.6, 0);
+  trophy.add(column);
 
   // Top orb
   const orb = new THREE.Mesh(new THREE.SphereGeometry(0.14, 32, 32),

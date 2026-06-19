@@ -12,10 +12,9 @@ function buildEnv(renderer: THREE.WebGLRenderer): THREE.Texture {
   const pmrem = new THREE.PMREMGenerator(renderer);
   pmrem.compileEquirectangularShader();
   const scene = new THREE.Scene();
-  // Warm studio environment — top warm key, burgundy bounce, cool fill
-  scene.add(Object.assign(new THREE.DirectionalLight(0xfff5e0, 3), { position: new THREE.Vector3(2, 5, 3) }));
-  scene.add(Object.assign(new THREE.DirectionalLight(0x722f37, 1.5), { position: new THREE.Vector3(-3, -2, 2) }));
-  scene.add(Object.assign(new THREE.DirectionalLight(0x3a4a6a, 0.8), { position: new THREE.Vector3(0, 3, -5) }));
+  const dl1 = new THREE.DirectionalLight(0xfff5e0, 3); dl1.position.set(2, 5, 3); scene.add(dl1);
+  const dl2 = new THREE.DirectionalLight(0x722f37, 1.5); dl2.position.set(-3, -2, 2); scene.add(dl2);
+  const dl3 = new THREE.DirectionalLight(0x3a4a6a, 0.8); dl3.position.set(0, 3, -5); scene.add(dl3);
   const env = pmrem.fromScene(new RoomEnvironment()).texture;
   pmrem.dispose();
   return env;

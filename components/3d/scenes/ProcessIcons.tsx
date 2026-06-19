@@ -266,9 +266,9 @@ function setup({ scene, camera, renderer, container, reducedMotion }: SceneConte
   }
 
   // Point lights per icon
-  scene.add(Object.assign(new THREE.PointLight(0xfff5e0, 2, 6), { position: new THREE.Vector3(xPos[0], 0, 2) }));
-  scene.add(Object.assign(new THREE.PointLight(0x9b2335, 2, 6), { position: new THREE.Vector3(xPos[1], 1, 2) }));
-  scene.add(Object.assign(new THREE.PointLight(0xc9a84c, 2, 6), { position: new THREE.Vector3(xPos[2], 0, 2) }));
+  const plA = new THREE.PointLight(0xfff5e0, 2, 6); plA.position.set(xPos[0], 0, 2); scene.add(plA);
+  const plB = new THREE.PointLight(0x9b2335, 2, 6); plB.position.set(xPos[1], 1, 2); scene.add(plB);
+  const plC = new THREE.PointLight(0xc9a84c, 2, 6); plC.position.set(xPos[2], 0, 2); scene.add(plC);
 
   // Float
   if (!reducedMotion) {
