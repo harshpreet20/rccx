@@ -31,7 +31,6 @@ const nextConfig: NextConfig = {
     ],
   },
   poweredByHeader: false,
-  serverExternalPackages: ['three'],
   experimental: {
     optimizeCss: false,
   },

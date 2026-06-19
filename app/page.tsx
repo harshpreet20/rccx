@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import { ScrollContextProvider } from '@/lib/scrollContext';
 import LoadingScreen from '@/components/layout/LoadingScreen';
+import HeroVideo from '@/components/layout/HeroVideo';
 import CustomCursor from '@/components/ui/CustomCursor';
 import NavbarRCC from '@/components/layout/NavbarRCC';
 import HeroRCC from '@/components/sections/HeroRCC';
@@ -21,12 +21,6 @@ import ScoreTicker from '@/components/ui/ScoreTicker';
 import ChatBot from '@/components/ui/ChatBot';
 import SupportModal from '@/components/ui/SupportModal';
 
-// 3D scene — client-only, no SSR
-const BadmintonScene = dynamic(
-  () => import('@/components/3d/BadmintonScene'),
-  { ssr: false, loading: () => null }
-);
-
 export default function Home() {
   const [loaded, setLoaded] = useState(false);
   const [sweepKey, setSweepKey] = useState(0);
@@ -38,8 +32,8 @@ export default function Home() {
 
   return (
     <ScrollContextProvider>
-      {/* 3D background canvas — fixed, z-0, warms up during loading screen */}
-      <BadmintonScene />
+      {/* Video background — fixed, z-0, plays behind all content */}
+      <HeroVideo />
 
       <div style={{ position: 'relative', zIndex: 1 }}>
         <CustomCursor />
