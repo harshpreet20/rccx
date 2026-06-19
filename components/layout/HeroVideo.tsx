@@ -14,7 +14,8 @@ export default function HeroVideo() {
         zIndex: 0,
         width: '100%',
         height: '100%',
-        objectFit: 'cover',
+        objectFit: 'contain',
+        background: '#060E1C',
         pointerEvents: 'none',
       }}
     >
