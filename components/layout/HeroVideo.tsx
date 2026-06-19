@@ -22,7 +22,7 @@ export default function HeroVideo() {
       playsInline
       preload="auto"
       style={{
-        position: 'fixed',
+        position: 'absolute',
         inset: 0,
         zIndex: 0,
         width: '100%',

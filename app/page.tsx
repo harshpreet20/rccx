@@ -32,9 +32,6 @@ export default function Home() {
 
   return (
     <ScrollContextProvider>
-      {/* Video background — fixed, z-0, plays behind all content */}
-      <HeroVideo />
-
       <div style={{ position: 'relative', zIndex: 1 }}>
         <CustomCursor />
         {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
@@ -44,7 +41,8 @@ export default function Home() {
 
           <NavbarRCC />
 
-          <div data-scene-section="hero">
+          <div data-scene-section="hero" style={{ position: 'relative', overflow: 'hidden', minHeight: '100vh' }}>
+            <HeroVideo />
             <HeroRCC />
           </div>
 
