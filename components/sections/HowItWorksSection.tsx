@@ -1,6 +1,12 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { MessageCircle, BarChart2, Zap, Brain, CalendarCheck, Shield } from 'lucide-react';
+
+const ProcessIcons = dynamic(
+  () => import('@/components/3d/scenes/ProcessIcons'),
+  { ssr: false }
+);
 
 const STEPS_NOW = [
   {
@@ -74,6 +80,11 @@ export default function HowItWorksSection() {
       `}</style>
 
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+
+        {/* 3D Process Icons */}
+        <div className="hidden md:block" style={{ marginBottom: 48 }}>
+          <ProcessIcons />
+        </div>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 64 }}>

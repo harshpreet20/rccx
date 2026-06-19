@@ -1,8 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+const CourtFragment = dynamic(
+  () => import('@/components/3d/scenes/CourtFragment'),
+  { ssr: false }
+);
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -79,7 +85,12 @@ export default function ActivityFeed() {
         overflow: 'hidden',
       }}
     >
-      <div style={{ maxWidth: 800, margin: '0 auto' }}>
+      {/* Court fragment — desktop left accent */}
+      <div className="hidden md:block" style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 320, opacity: 0.55, pointerEvents: 'none' }}>
+        <CourtFragment />
+      </div>
+
+      <div style={{ maxWidth: 800, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div className="text-label" style={{ color: 'rgba(201,168,76,0.6)', marginBottom: 16 }}>

@@ -1,8 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+const ShuttlecockSculpture = dynamic(
+  () => import('@/components/3d/scenes/ShuttlecockSculpture'),
+  { ssr: false }
+);
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -83,6 +89,11 @@ export default function AboutRCC() {
         gap: 80,
         alignItems: 'center',
       }}>
+        {/* 3D Shuttlecock sculpture — desktop only */}
+        <div className="hidden md:block" style={{ gridColumn: '1', gridRow: '1' }}>
+          <ShuttlecockSculpture />
+        </div>
+
         {/* Stats card */}
         <div
           ref={cardRef}

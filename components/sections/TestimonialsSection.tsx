@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
+import RacketAccent from '@/components/3d/scenes/RacketAccent';
 import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 
 interface Testimonial {
@@ -129,7 +130,8 @@ export default function TestimonialsSection() {
         }}
       />
 
-      <div style={{ textAlign: 'center', marginBottom: '56px' }}>
+      <div style={{ textAlign: 'center', marginBottom: '56px', position: 'relative' }}>
+        <RacketAccent className="absolute -top-4 -left-4 w-12 h-14 opacity-30 hidden md:block" />
         <div style={{ display: 'inline-flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center' }}>
           {TITLE_WORDS.map((word, wi) => (
             <motion.span
