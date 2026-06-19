@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { gsap } from 'gsap';
+import Image from 'next/image';
 
 interface LoadingScreenProps {
   onComplete: () => void;
@@ -103,10 +104,12 @@ export default function LoadingScreen({ onComplete }: LoadingScreenProps) {
 
       {/* RCC Crest image */}
       <div ref={crestRef} style={{ position: 'relative', width: 240, height: 240 }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src="/rcc-crest.png"
           alt="Racquets Club Community"
+          width={240}
+          height={240}
+          priority
           style={{
             width: '100%',
             height: '100%',

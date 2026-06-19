@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { gsap } from 'gsap';
+import Image from 'next/image';
 
 const NAV_LINKS = [
   { label: 'About', href: '/about' },
@@ -30,7 +31,7 @@ export default function NavbarRCC() {
         style={{
           position: 'fixed',
           top: 0, left: 0, right: 0,
-          height: 64,
+          height: 77,
           zIndex: 1000,
           display: 'flex',
           alignItems: 'center',
@@ -50,12 +51,12 @@ export default function NavbarRCC() {
           onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.filter = 'drop-shadow(0 0 8px rgba(201,168,76,0.45))'; }}
           onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.filter = 'none'; }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
+          <Image
             src="/rcc-logo2.png"
             alt="RCC — Racquets Club Community"
-            width={52}
-            height={52}
+            width={62}
+            height={62}
+            priority
             style={{ flexShrink: 0, objectFit: 'contain' }}
           />
 
@@ -91,7 +92,7 @@ export default function NavbarRCC() {
               href={link.href}
               style={{
                 fontFamily: 'var(--font-archivo), Arial, sans-serif',
-                fontSize: 16,
+                fontSize: 19,
                 letterSpacing: '0.12em',
                 color: pathname === link.href ? '#C9A84C' : 'rgba(245,240,232,0.7)',
                 textDecoration: 'none',
