@@ -1,18 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import dynamic from 'next/dynamic';
 import { motion, useInView } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
-
-const RankMedallions = dynamic(
-  () => import('@/components/3d/scenes/RankMedallions'),
-  { ssr: false }
-);
-const LeaderboardAmbient = dynamic(
-  () => import('@/components/3d/scenes/LeaderboardAmbient'),
-  { ssr: false }
-);
 import { TrendingUp, Shield, Award } from 'lucide-react';
 
 interface LeaderboardEntry {
@@ -115,17 +105,14 @@ export default function LeaderboardSection() {
   return (
     <section
       ref={sectionRef}
+      className="relative z-10"
       style={{
         padding: '80px clamp(16px, 5vw, 120px)',
-        background: '#0A1628',
+        background: 'transparent',
         position: 'relative',
         overflow: 'hidden',
       }}
     >
-      <LeaderboardAmbient />
-      <div className="hidden md:block" style={{ position: 'relative', zIndex: 1 }}>
-        <RankMedallions />
-      </div>
       <div
         style={{
           position: 'absolute',
