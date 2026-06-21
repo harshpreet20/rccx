@@ -1,14 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import dynamic from 'next/dynamic';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-const LatticeTrophy = dynamic(
-  () => import('@/components/3d/scenes/LatticeTrophy'),
-  { ssr: false }
-);
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -60,8 +54,9 @@ export default function TournamentsRCC() {
   return (
     <section
       ref={sectionRef}
+      className="relative z-10"
       style={{
-        background: 'linear-gradient(180deg, #0A1628 0%, #0D1E3A 100%)',
+        background: 'transparent',
         padding: 'clamp(120px, 14vw, 180px) clamp(24px, 6vw, 80px) clamp(80px, 10vw, 140px)',
         position: 'relative',
         overflow: 'hidden',
@@ -77,11 +72,6 @@ export default function TournamentsRCC() {
       <div className="speed-lines" style={{ opacity: 0.6 }} />
 
       <div style={{ maxWidth: 1280, margin: '0 auto', position: 'relative' }}>
-        {/* Trophy centrepiece — desktop only */}
-        <div className="hidden md:block" style={{ marginBottom: 40 }}>
-          <LatticeTrophy />
-        </div>
-
         {/* Section header */}
         <div style={{ textAlign: 'center', marginBottom: 56 }}>
           <div className="text-label tournament-reveal" style={{ color: 'rgba(201,168,76,0.65)', marginBottom: 16 }}>
