@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef } from 'react';
+import type * as THREE from 'three';
 import { useReducedMotion } from './hooks/useReducedMotion';
 
 export default function ScrollExperience() {
@@ -269,7 +270,7 @@ export default function ScrollExperience() {
       const nodePositions: [number, number][] = [
         [0, 0.5], [-0.5, 0], [0.5, 0], [-0.3, -0.5], [0.3, -0.5],
       ];
-      const nodeMeshes: THREE.Mesh[] = [];
+      const nodeMeshes: InstanceType<typeof THREE.Mesh>[] = [];
       const nodeMat = new THREE.MeshStandardMaterial({ color: 0xffd700, metalness: 0.7, roughness: 0.2 });
       for (const pos of nodePositions) {
         const nodeGeo = new THREE.SphereGeometry(0.08, 16, 8);
@@ -435,7 +436,7 @@ export default function ScrollExperience() {
 
         // Act 5 idle: drift particles upward
         if (act === 5 && !reducedMotion) {
-          const posAttr = particleGeo.getAttribute('position') as THREE.BufferAttribute;
+          const posAttr = particleGeo.getAttribute('position') as InstanceType<typeof THREE.BufferAttribute>;
           for (let i = 0; i < particleCount; i++) {
             posAttr.setY(i, posAttr.getY(i) + velocities[i * 3 + 1]);
             posAttr.setX(i, posAttr.getX(i) + velocities[i * 3]);
@@ -463,10 +464,10 @@ export default function ScrollExperience() {
         cleanupGsap?.();
 
         scene.traverse((obj) => {
-          const mesh = obj as THREE.Mesh;
+          const mesh = obj as InstanceType<typeof THREE.Mesh>;
           if (mesh.geometry) mesh.geometry.dispose();
           if (mesh.material) {
-            (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach(m => m.dispose());
+            (Array.isArray(mesh.material) ? mesh.material : [mesh.material]).forEach((m: { dispose(): void }) => m.dispose());
           }
         });
 
