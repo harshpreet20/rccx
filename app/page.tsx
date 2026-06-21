@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { ScrollContextProvider } from '@/lib/scrollContext';
 import LoadingScreen from '@/components/layout/LoadingScreen';
+
+const ScrollExperience = dynamic(() => import('@/components/3d/ScrollExperience'), { ssr: false });
 import HeroVideo from '@/components/layout/HeroVideo';
 import CustomCursor from '@/components/ui/CustomCursor';
 import NavbarRCC from '@/components/layout/NavbarRCC';
@@ -32,6 +35,7 @@ export default function Home() {
 
   return (
     <ScrollContextProvider>
+      <ScrollExperience />
       <div style={{ position: 'relative', zIndex: 1 }}>
         <CustomCursor />
         {!loaded && <LoadingScreen onComplete={() => setLoaded(true)} />}
