@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import { Montserrat, Inter, Bebas_Neue, Dancing_Script, Cormorant_Garamond, DM_Mono, Playfair_Display, Anton, Archivo } from 'next/font/google';
 import './globals.css';
 
@@ -90,6 +91,32 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="antialiased bg-[#0A1628] text-[#F5F0E8] overflow-x-hidden">
         {children}
+        <div
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            width: '240px',
+            zIndex: 9999,
+            pointerEvents: 'auto',
+          }}
+        >
+          <div
+            className="trustpilot-widget"
+            data-locale="en-US"
+            data-template-id="56278e9abfbbba0bdcd568bc"
+            data-businessunit-id="6a3b7982b91e870cae95afe6"
+            data-style-height="52px"
+            data-style-width="100%"
+            data-token="de43c10d-4002-4633-9385-b9b491f0dbbf"
+          >
+            <a href="https://www.trustpilot.com/review/racquetsclubcommunity.com" target="_blank" rel="noopener">Trustpilot</a>
+          </div>
+        </div>
+        <Script
+          src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );
