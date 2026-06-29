@@ -14,10 +14,7 @@ import OurValuesSection from '@/components/sections/OurValuesSection';
 import HudlePartnerSection from '@/components/sections/HudlePartnerSection';
 import VenuesSection from '@/components/sections/VenuesSection';
 import HowItWorksSection from '@/components/sections/HowItWorksSection';
-import LeaderboardSection from '@/components/sections/LeaderboardSection';
 import TestimonialsSection from '@/components/sections/TestimonialsSection';
-import InstagramFeed from '@/components/sections/InstagramFeed';
-import ActivityFeed from '@/components/sections/ActivityFeed';
 import JoinCTASection from '@/components/sections/JoinCTASection';
 import FooterRCC from '@/components/layout/FooterRCC';
 import ScoreTicker from '@/components/ui/ScoreTicker';
@@ -49,10 +46,7 @@ export default function Home() {
           <HudlePartnerSection />
           <VenuesSection />
           <HowItWorksSection />
-          <LeaderboardSection />
           <TestimonialsSection />
-          <InstagramFeed />
-          <ActivityFeed />
           <JoinCTASection />
           <FooterRCC />
           <ChatBot />
