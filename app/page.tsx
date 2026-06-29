@@ -11,13 +11,10 @@ import AboutRCC from '@/components/sections/AboutRCC';
 import RCCByTheNumbers from '@/components/sections/RCCByTheNumbers';
 import WhyRCCSection from '@/components/sections/WhyRCCSection';
 import OurValuesSection from '@/components/sections/OurValuesSection';
-import TournamentInvite from '@/components/sections/TournamentInvite';
-import TournamentsRCC from '@/components/sections/TournamentsRCC';
 import HudlePartnerSection from '@/components/sections/HudlePartnerSection';
 import VenuesSection from '@/components/sections/VenuesSection';
 import HowItWorksSection from '@/components/sections/HowItWorksSection';
 import LeaderboardSection from '@/components/sections/LeaderboardSection';
-import CommunityFeed from '@/components/sections/CommunityFeed';
 import TestimonialsSection from '@/components/sections/TestimonialsSection';
 import InstagramFeed from '@/components/sections/InstagramFeed';
 import ActivityFeed from '@/components/sections/ActivityFeed';
@@ -49,13 +46,10 @@ export default function Home() {
           <RCCByTheNumbers />
           <WhyRCCSection />
           <OurValuesSection />
-          <TournamentInvite />
-          <TournamentsRCC />
           <HudlePartnerSection />
           <VenuesSection />
           <HowItWorksSection />
           <LeaderboardSection />
-          <CommunityFeed />
           <TestimonialsSection />
           <InstagramFeed />
           <ActivityFeed />
