@@ -2,7 +2,6 @@
 
 import NavbarRCC from '@/components/layout/NavbarRCC';
 import FooterRCC from '@/components/layout/FooterRCC';
-import { SoftAurora } from '@/components/ui/SoftAurora';
 import { useEffect, useRef, useState } from 'react';
 
 type ContactType = 'general' | 'partner' | 'venue' | 'sponsor' | 'volunteer' | 'media';
@@ -228,7 +227,6 @@ export default function ContactPage() {
 
       {/* Hero */}
       <section style={{ position: 'relative', padding: '100px 24px 80px', textAlign: 'center', overflow: 'hidden' }}>
-        <SoftAurora />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
           <p
             ref={(el) => addRef(el, 0)}

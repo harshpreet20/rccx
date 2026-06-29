@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import { MessageCircle } from 'lucide-react';
 
 function InstagramIcon({ size = 17 }: { size?: number }) {
@@ -52,34 +51,8 @@ const NAV_COLUMNS = [
 ];
 
 export default function FooterRCC() {
-  const footerRef = useRef<HTMLElement>(null);
-  const hasRevealed = useRef(false);
-
-  useEffect(() => {
-    const footer = footerRef.current;
-    if (!footer) return;
-
-    footer.style.opacity = '0';
-    footer.style.transition = 'opacity 0.9s ease';
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && !hasRevealed.current) {
-          hasRevealed.current = true;
-          footer.style.opacity = '1';
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.05 }
-    );
-
-    observer.observe(footer);
-    return () => observer.disconnect();
-  }, []);
-
   return (
     <footer
-      ref={footerRef}
       style={{
         background: 'linear-gradient(180deg, #030810 0%, #000000 100%)',
         borderTop: '2px solid rgba(201,168,76,0.15)',
