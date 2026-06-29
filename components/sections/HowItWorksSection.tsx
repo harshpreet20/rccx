@@ -1,180 +1,281 @@
 'use client';
 
-import { MessageCircle, BarChart2, Zap, Brain, CalendarCheck, Shield } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
-const STEPS_NOW = [
+const STEPS = [
   {
-    icon: <MessageCircle size={22} color="#25D366" />,
-    accent: '#25D366',
-    label: 'WhatsApp Community',
-    desc: 'All active members are part of our WhatsApp community — the heartbeat of RCC between events.',
+    number: '01',
+    title: 'Join RCC',
+    desc: 'Apply via our website or WhatsApp',
   },
   {
-    icon: <BarChart2 size={22} color="#D4AF37" />,
-    accent: '#C9A84C',
-    label: 'Session Polls',
-    desc: 'We drop polls before every session — date, venue, doubles or singles. You vote, we count, we confirm within hours.',
+    number: '02',
+    title: 'Find Players',
+    desc: 'Get matched by skill level and availability',
   },
   {
-    icon: <CalendarCheck size={22} color="#C21818" />,
-    accent: '#C21818',
-    label: 'Show Up & Play',
-    desc: 'Venue is announced 48 hrs ahead. Pair up on arrival or get seeded by the organiser. No pre-booking hassle.',
-  },
-];
-
-const STEPS_FUTURE = [
-  {
-    icon: <Brain size={22} color="#a78bfa" />,
-    accent: '#a78bfa',
-    label: 'AI Availability Engine',
-    desc: 'Log your weekly slots once. The system learns your schedule, tracks your preferred days, and auto-marks you available.',
+    number: '03',
+    title: 'Book via Hudle',
+    desc: 'Secure your court through our Hudle partnership',
   },
   {
-    icon: <Zap size={22} color="#D4AF37" />,
-    accent: '#C9A84C',
-    label: 'Skill-Matched Games',
-    desc: "AI pairs you with players at your level for every session — balanced doubles, fair singles, no mismatches.",
+    number: '04',
+    title: 'Play',
+    desc: 'Show up. Rally. Compete.',
   },
   {
-    icon: <Shield size={22} color="#4ade80" />,
-    accent: '#4ade80',
-    label: 'Zero Coordination',
-    desc: "You get a notification: your game is confirmed, here's your match, here's the court, see you at 7 PM.",
+    number: '05',
+    title: 'Make Friends',
+    desc: 'The community extends beyond badminton',
+  },
+  {
+    number: '06',
+    title: 'Become Part of RCC',
+    desc: "You're not just a member. You're RCC.",
   },
 ];
 
 export default function HowItWorksSection() {
+  const sectionRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const cards = section.querySelectorAll<HTMLElement>('.step-card');
+    cards.forEach(card => {
+      card.style.opacity = '0';
+      card.style.transform = 'translateY(32px)';
+      card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    });
+
+    const observers: IntersectionObserver[] = [];
+
+    cards.forEach((card, i) => {
+      const obs = new IntersectionObserver(
+        (entries) => {
+          if (entries[0].isIntersecting) {
+            setTimeout(() => {
+              card.style.opacity = '1';
+              card.style.transform = 'translateY(0)';
+            }, i * 60);
+            obs.disconnect();
+          }
+        },
+        { threshold: 0.15 }
+      );
+      obs.observe(card);
+      observers.push(obs);
+    });
+
+    const headerItems = section.querySelectorAll<HTMLElement>('.header-item');
+    headerItems.forEach(el => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(20px)';
+      el.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+    });
+
+    const headerObs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          headerItems.forEach((el, i) => {
+            setTimeout(() => {
+              el.style.opacity = '1';
+              el.style.transform = 'translateY(0)';
+            }, i * 100);
+          });
+          headerObs.disconnect();
+        }
+      },
+      { threshold: 0.2 }
+    );
+
+    if (section) headerObs.observe(section);
+
+    return () => {
+      observers.forEach(o => o.disconnect());
+      headerObs.disconnect();
+    };
+  }, []);
+
   return (
     <section
+      ref={sectionRef}
       className="relative z-10"
       style={{
         background: 'transparent',
-        padding: 'clamp(60px, 8vw, 100px) clamp(20px, 6vw, 120px)',
         position: 'relative',
+        padding: 'clamp(80px, 10vw, 140px) clamp(24px, 6vw, 120px)',
         overflow: 'hidden',
       }}
     >
-      {/* Gold top border */}
-      <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: 'linear-gradient(to right, transparent, rgba(201,168,76,0.35), transparent)' }} />
-
-      {/* Animated shuttlecocks */}
-      <svg aria-hidden style={{ position: 'absolute', top: '12%', left: '-3%', width: 32, height: 40, opacity: 0.18, animation: 'shuttle-drift-1 18s linear infinite', pointerEvents: 'none' }} viewBox="0 0 32 40">
-        <circle cx="16" cy="7" r="6" fill="#C9A84C" />
-        <path d="M10 13 Q16 32 22 13 Q16 18 10 13Z" fill="#C9A84C" opacity="0.7" />
-        {[0,1,2,3,4,5,6,7].map(i => <line key={i} x1="16" y1="13" x2={16 + Math.cos((i/8)*Math.PI*2)*11} y2={13 + Math.sin((i/8)*Math.PI*2)*14} stroke="#C9A84C" strokeWidth="0.8" opacity="0.5" />)}
-      </svg>
-      <svg aria-hidden style={{ position: 'absolute', bottom: '18%', right: '5%', width: 24, height: 32, opacity: 0.14, animation: 'shuttle-drift-2 24s linear infinite', pointerEvents: 'none', transform: 'rotate(45deg)' }} viewBox="0 0 32 40">
-        <circle cx="16" cy="7" r="6" fill="#C9A84C" />
-        <path d="M10 13 Q16 32 22 13 Q16 18 10 13Z" fill="#C9A84C" opacity="0.7" />
-        {[0,1,2,3,4,5,6,7].map(i => <line key={i} x1="16" y1="13" x2={16 + Math.cos((i/8)*Math.PI*2)*11} y2={13 + Math.sin((i/8)*Math.PI*2)*14} stroke="#C9A84C" strokeWidth="0.8" opacity="0.5" />)}
-      </svg>
       <style>{`
-        @keyframes shuttle-drift-1 { 0%{transform:translate(0,0) rotate(-30deg)} 50%{transform:translate(60vw,30px) rotate(-30deg)} 100%{transform:translate(0,0) rotate(-30deg)} }
-        @keyframes shuttle-drift-2 { 0%{transform:translate(0,0) rotate(45deg)} 50%{transform:translate(-40vw,-20px) rotate(45deg)} 100%{transform:translate(0,0) rotate(45deg)} }
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Playfair+Display:ital,wght@1,400;1,500&family=Montserrat:wght@300;400;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+        @media (min-width: 768px) {
+          .timeline-step:nth-child(odd) .step-card-wrapper {
+            padding-left: calc(50% + 40px);
+            padding-right: 0;
+          }
+          .timeline-step:nth-child(even) .step-card-wrapper {
+            padding-right: calc(50% + 40px);
+            padding-left: 0;
+            text-align: right;
+          }
+          .timeline-step:nth-child(even) .step-dot {
+            left: auto !important;
+            right: calc(50% - 6px);
+          }
+          .timeline-step:nth-child(odd) .step-dot {
+            left: calc(50% - 6px);
+          }
+          .timeline-step:nth-child(even) .step-number {
+            right: calc(50% + 48px) !important;
+            left: auto !important;
+            text-align: right;
+          }
+          .timeline-step:nth-child(odd) .step-number {
+            left: calc(50% + 48px);
+          }
+        }
       `}</style>
 
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 64 }}>
-          <div style={{ display: 'inline-block', fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 11, letterSpacing: '0.2em', color: '#C21818', textTransform: 'uppercase', marginBottom: 12 }}>
-            Community Life
+        {/* Section header */}
+        <div style={{ marginBottom: 80 }}>
+          <div className="header-item" style={{
+            fontFamily: '"DM Mono", monospace',
+            fontSize: 12,
+            fontWeight: 500,
+            letterSpacing: '0.22em',
+            textTransform: 'uppercase',
+            color: '#C9A84C',
+            marginBottom: 24,
+          }}>
+            The RCC Experience
           </div>
-          <h2 style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 'clamp(26px, 4vw, 42px)', color: '#fff', letterSpacing: '0.04em', textTransform: 'uppercase', marginBottom: 16 }}>
-            How RCC Works
+          <h2 className="header-item" style={{
+            fontFamily: '"Playfair Display", Georgia, serif',
+            fontStyle: 'italic',
+            fontWeight: 400,
+            fontSize: 'clamp(36px, 5vw, 56px)',
+            color: '#ffffff',
+            lineHeight: 1.15,
+            maxWidth: 580,
+          }}>
+            From first rally to lifelong community.
           </h2>
-          <p style={{ fontFamily: 'var(--font-inter)', fontSize: 15, color: 'rgba(255,255,255,0.45)', maxWidth: 560, margin: '0 auto', lineHeight: 1.75 }}>
-            Right now we run on community energy and WhatsApp polls. Soon, an AI engine will handle everything — matching you to the perfect game without lifting a finger.
-          </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(520px, 1fr))', gap: 32 }}>
+        {/* Timeline */}
+        <div style={{ position: 'relative' }}>
 
-          {/* ── Today ── */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ height: 1, flex: 1, background: 'rgba(255,255,255,0.07)' }} />
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.18em', color: '#C9A84C', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>How It Works Today</span>
-              <div style={{ height: 1, flex: 1, background: 'rgba(255,255,255,0.07)' }} />
-            </div>
+          {/* Vertical line */}
+          <div style={{
+            position: 'absolute',
+            left: '50%',
+            top: 0,
+            bottom: 0,
+            width: 1,
+            background: 'linear-gradient(180deg, transparent 0%, rgba(201,168,76,0.5) 15%, rgba(201,168,76,0.3) 85%, transparent 100%)',
+            transform: 'translateX(-50%)',
+            display: 'none',
+          }}
+          className="timeline-line"
+          />
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {STEPS_NOW.map((step, i) => (
-                <div key={i} style={{ display: 'flex', gap: 16, background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 12, padding: '18px 20px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: `rgba(${step.accent === '#25D366' ? '37,211,102' : step.accent === '#D4AF37' ? '201,168,76' : '194,24,24'},0.1)`, border: `1px solid ${step.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {step.icon}
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 13, color: '#fff', marginBottom: 5, letterSpacing: '0.03em' }}>{step.label}</div>
-                    <div style={{ fontFamily: 'var(--font-inter)', fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65 }}>{step.desc}</div>
+          <style>{`
+            @media (min-width: 768px) {
+              .timeline-line { display: block !important; }
+            }
+          `}</style>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            {STEPS.map((step, i) => (
+              <div
+                key={step.number}
+                className="timeline-step"
+                style={{
+                  position: 'relative',
+                  paddingBottom: i < STEPS.length - 1 ? 48 : 0,
+                }}
+              >
+                {/* Dot on line */}
+                <div className="step-dot" style={{
+                  position: 'absolute',
+                  top: 32,
+                  left: 0,
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  background: '#C9A84C',
+                  border: '3px solid rgba(201,168,76,0.25)',
+                  zIndex: 2,
+                  boxShadow: '0 0 12px rgba(201,168,76,0.4)',
+                }} />
+
+                {/* Ghost number */}
+                <div className="step-number" style={{
+                  position: 'absolute',
+                  top: -16,
+                  left: 24,
+                  fontFamily: '"Anton", "Impact", sans-serif',
+                  fontSize: 80,
+                  color: 'rgba(201,168,76,0.08)',
+                  lineHeight: 1,
+                  userSelect: 'none',
+                  pointerEvents: 'none',
+                  zIndex: 0,
+                }}>
+                  {step.number}
+                </div>
+
+                {/* Card wrapper */}
+                <div className="step-card-wrapper" style={{ paddingLeft: 32 }}>
+                  <div className="step-card" style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(201,168,76,0.12)',
+                    borderRadius: 16,
+                    padding: 32,
+                    position: 'relative',
+                    zIndex: 1,
+                    maxWidth: 420,
+                  }}>
+                    <div style={{
+                      fontFamily: '"DM Mono", monospace',
+                      fontSize: 11,
+                      color: 'rgba(201,168,76,0.5)',
+                      letterSpacing: '0.12em',
+                      marginBottom: 10,
+                    }}>
+                      Step {step.number}
+                    </div>
+                    <div style={{
+                      fontFamily: '"Montserrat", sans-serif',
+                      fontSize: 20,
+                      fontWeight: 600,
+                      color: '#ffffff',
+                      marginBottom: 10,
+                      letterSpacing: '0.01em',
+                    }}>
+                      {step.title}
+                    </div>
+                    <div style={{
+                      fontFamily: '"Montserrat", sans-serif',
+                      fontSize: 15,
+                      fontWeight: 300,
+                      color: 'rgba(255,255,255,0.45)',
+                      lineHeight: 1.6,
+                    }}>
+                      {step.desc}
+                    </div>
                   </div>
                 </div>
-              ))}
-            </div>
-
-            {/* WhatsApp CTA */}
-            <div style={{ marginTop: 20, background: 'rgba(37,211,102,0.06)', border: '1px solid rgba(37,211,102,0.2)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <MessageCircle size={18} color="#25D366" style={{ flexShrink: 0 }} />
-              <div>
-                <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 12, color: '#25D366', letterSpacing: '0.06em', marginBottom: 2 }}>JOIN THE WHATSAPP COMMUNITY</div>
-                <div style={{ fontFamily: 'var(--font-inter)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Members get added after approval. Polls go live every week.</div>
               </div>
-            </div>
+            ))}
           </div>
-
-          {/* ── Coming Soon ── */}
-          <div style={{ position: 'relative' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 24 }}>
-              <div style={{ height: 1, flex: 1, background: 'rgba(255,255,255,0.07)' }} />
-              <span style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 11, letterSpacing: '0.18em', color: '#a78bfa', textTransform: 'uppercase', whiteSpace: 'nowrap' }}>AI Matchmaking — Coming Soon</span>
-              <div style={{ height: 1, flex: 1, background: 'rgba(255,255,255,0.07)' }} />
-            </div>
-
-            {/* Glow behind */}
-            <div aria-hidden style={{ position: 'absolute', top: 40, right: -20, width: 260, height: 260, borderRadius: '50%', background: 'radial-gradient(circle, rgba(167,139,250,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {STEPS_FUTURE.map((step, i) => (
-                <div key={i} style={{ display: 'flex', gap: 16, background: 'rgba(167,139,250,0.03)', border: '1px solid rgba(167,139,250,0.12)', borderRadius: 12, padding: '18px 20px' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 10, background: `rgba(${step.accent === '#a78bfa' ? '167,139,250' : step.accent === '#D4AF37' ? '201,168,76' : '74,222,128'},0.1)`, border: `1px solid ${step.accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {step.icon}
-                  </div>
-                  <div>
-                    <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 800, fontSize: 13, color: '#fff', marginBottom: 5, letterSpacing: '0.03em' }}>{step.label}</div>
-                    <div style={{ fontFamily: 'var(--font-inter)', fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 1.65 }}>{step.desc}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Teaser badge */}
-            <div style={{ marginTop: 20, background: 'rgba(167,139,250,0.06)', border: '1px solid rgba(167,139,250,0.2)', borderRadius: 12, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
-              <Brain size={18} color="#a78bfa" style={{ flexShrink: 0 }} />
-              <div>
-                <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 700, fontSize: 12, color: '#a78bfa', letterSpacing: '0.06em', marginBottom: 2 }}>AVAILABILITY-FIRST SCHEDULING</div>
-                <div style={{ fontFamily: 'var(--font-inter)', fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>Set your free slots once. The AI finds your best match — skill, timing, venue. You just play.</div>
-              </div>
-            </div>
-          </div>
-
         </div>
-
-        {/* Bottom stat row */}
-        <div style={{ marginTop: 56, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
-          {[
-            { stat: 'WhatsApp', sub: 'Active community group', color: '#25D366' },
-            { stat: 'Weekly Polls', sub: 'Every session decided by vote', color: '#C9A84C' },
-            { stat: '48 hrs', sub: 'Venue confirmed before play', color: '#C21818' },
-            { stat: 'AI Q4 2025', sub: 'Smart matchmaking target', color: '#a78bfa' },
-          ].map(({ stat, sub, color }) => (
-            <div key={stat} style={{ background: 'rgba(255,255,255,0.025)', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 10, padding: '16px 18px' }}>
-              <div style={{ fontFamily: 'var(--font-montserrat)', fontWeight: 900, fontSize: 16, color, marginBottom: 4 }}>{stat}</div>
-              <div style={{ fontFamily: 'var(--font-inter)', fontSize: 11, color: 'rgba(255,255,255,0.35)', lineHeight: 1.5 }}>{sub}</div>
-            </div>
-          ))}
-        </div>
-
       </div>
     </section>
   );
