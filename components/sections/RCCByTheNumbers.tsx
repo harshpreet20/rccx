@@ -149,7 +149,7 @@ function StatCard({ stat, index }: StatCardProps) {
   );
 }
 
-export function RCCByTheNumbers() {
+export default function RCCByTheNumbers() {
   const [activeTab, setActiveTab] = useState<TabKey>('Community');
   const [visible, setVisible] = useState(true);
 

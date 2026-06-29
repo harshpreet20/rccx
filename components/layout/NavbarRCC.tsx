@@ -7,10 +7,10 @@ import Image from 'next/image';
 
 const NAV_LINKS = [
   { label: 'About', href: '/about' },
+  { label: 'Experience', href: '/join' },
   { label: 'Community', href: '/community' },
-  { label: 'Tournaments', href: '/tournaments' },
-  { label: 'Courts', href: '/courts' },
   { label: 'Events', href: '/events' },
+  { label: 'FAQ', href: '/faq' },
 ];
 
 export default function NavbarRCC() {

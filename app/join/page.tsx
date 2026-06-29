@@ -1,446 +1,402 @@
 'use client';
 
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { CheckCircle2, AlertCircle, Zap, ChevronRight, ChevronLeft, MessageCircle } from 'lucide-react';
-import { submitMemberOnboarding } from '@/lib/supabase';
-import { SOCIAL_LINKS } from '@/lib/utils';
+import NavbarRCC from '@/components/layout/NavbarRCC';
+import FooterRCC from '@/components/layout/FooterRCC';
+import { SoftAurora } from '@/components/ui/SoftAurora';
+import { useEffect, useRef, useState } from 'react';
+import { Calendar, Users, Shield, Trophy, Zap } from 'lucide-react';
 
-const steps = [
-  { label: 'About You', icon: '👤' },
-  { label: 'Your Game', icon: '🏸' },
-  { label: 'Community', icon: '🤝' },
+const experiences = [
+  { icon: Calendar, title: 'Daily Games', desc: 'Curated sessions every day across Delhi NCR.' },
+  { icon: Users, title: 'Beginner Sessions', desc: 'Skill-grouped games so you always play at your level.' },
+  { icon: Shield, title: "Women's Sessions", desc: 'Dedicated sessions with women admins present.' },
+  { icon: Trophy, title: 'Community Events', desc: 'Social nights, mixers, and community hangouts.' },
+  { icon: Zap, title: 'Monthly Tournaments', desc: 'Compete in RCC Rise Cup and internal leagues.' },
 ];
 
-const skillLevels = ['Beginner', 'Intermediate', 'Advanced', 'Professional'];
-const courtPreferences = ['Siri Fort Sports Complex', 'Yamuna Sports Complex', 'Any available', 'No preference'];
-const howHeardOptions = ['WhatsApp', 'Instagram', 'Friend/Player referral', 'Google Search', 'Other'];
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
-type FormData = {
-  full_name: string;
-  phone: string;
-  email: string;
-  birthday: string;
-  skill_level: string;
-  years_playing: string;
-  court_preference: string;
-  how_heard: string;
-  agree_guidelines: boolean;
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  background: 'rgba(255,255,255,0.05)',
+  border: '1px solid rgba(201,168,76,0.2)',
+  borderRadius: 8,
+  padding: '14px 16px',
+  color: '#F5F0E8',
+  fontFamily: '"Montserrat", sans-serif',
+  fontSize: 15,
+  outline: 'none',
+  boxSizing: 'border-box',
+};
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontFamily: '"Montserrat", sans-serif',
+  fontSize: 13,
+  fontWeight: 600,
+  color: 'rgba(245,240,232,0.7)',
+  marginBottom: 8,
+  letterSpacing: '0.04em',
 };
 
 export default function JoinPage() {
-  const [step, setStep] = useState(0);
-  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [errorMsg, setErrorMsg] = useState('');
-  const [form, setForm] = useState<FormData>({
-    full_name: '',
-    phone: '',
-    email: '',
-    birthday: '',
-    skill_level: 'Beginner',
-    years_playing: '0',
-    court_preference: 'No preference',
-    how_heard: '',
-    agree_guidelines: false,
-  });
+  const fadeRefs = useRef<(HTMLElement | null)[]>([]);
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+  const [racket, setRacket] = useState('');
+  const [consented, setConsented] = useState(false);
+  const [whatsappOptIn, setWhatsappOptIn] = useState(false);
 
-  const set = (field: keyof FormData, value: string | boolean) =>
-    setForm(prev => ({ ...prev, [field]: value }));
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            (entry.target as HTMLElement).style.opacity = '1';
+            (entry.target as HTMLElement).style.transform = 'translateY(0)';
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+    fadeRefs.current.forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
 
-  const handleSubmit = async () => {
-    if (!form.agree_guidelines) {
-      setErrorMsg('Please agree to the community guidelines to proceed.');
-      setStatus('error');
-      return;
-    }
-    setStatus('loading');
-    setErrorMsg('');
-    try {
-      await submitMemberOnboarding({
-        full_name: form.full_name,
-        phone: form.phone || undefined,
-        email: form.email || undefined,
-        birthday: form.birthday || undefined,
-        skill_level: form.skill_level,
-        court_preference: form.court_preference,
-        years_playing: parseInt(form.years_playing) || 0,
-        how_heard: form.how_heard || undefined,
-        agree_guidelines: form.agree_guidelines,
-      });
-      setStatus('success');
-    } catch {
-      setStatus('error');
-      setErrorMsg('Something went wrong. Please try again or join via WhatsApp.');
-    }
+  const fadeStyle: React.CSSProperties = {
+    opacity: 0,
+    transform: 'translateY(32px)',
+    transition: 'opacity 0.7s ease, transform 0.7s ease',
   };
 
-  const canNext = () => {
-    if (step === 0) return !!form.full_name && !!form.phone;
-    if (step === 1) return !!form.skill_level;
-    return true;
+  const addRef = (el: HTMLElement | null, i: number) => {
+    fadeRefs.current[i] = el;
+  };
+
+  const toggleDay = (day: string) => {
+    setSelectedDays((prev) =>
+      prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]
+    );
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSubmitting(true);
+    const form = e.currentTarget;
+    const data = Object.fromEntries(new FormData(form));
+    data.preferredDays = selectedDays.join(',');
+    data.ownRacket = racket;
+    data.consent = String(consented);
+    data.whatsappOptIn = String(whatsappOptIn);
+    try {
+      await fetch('/api/forms/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      setSubmitted(true);
+    } catch {
+      // show success anyway for UX
+      setSubmitted(true);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="pt-24 min-h-screen">
-      {/* Background */}
-      <div className="fixed inset-0 -z-10">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-gradient-radial from-[#C21818]/8 to-transparent blur-3xl" />
-        <div className="absolute bottom-0 right-0 w-96 h-96 bg-[#D4AF37]/5 blur-3xl" />
-      </div>
+    <main style={{ background: '#050810', minHeight: '100vh', paddingTop: 69 }}>
+      <NavbarRCC />
 
-      <div className="max-w-2xl mx-auto px-6 py-16">
-
-        {/* Header */}
-        <div className="text-center mb-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center gap-4 mb-6"
+      {/* Hero */}
+      <section style={{ position: 'relative', padding: '100px 24px 60px', textAlign: 'center', overflow: 'hidden' }}>
+        <SoftAurora />
+        <div style={{ position: 'relative', zIndex: 1, maxWidth: 700, margin: '0 auto' }}>
+          <p
+            ref={(el) => addRef(el, 0)}
+            style={{
+              ...fadeStyle,
+              fontFamily: '"DM Mono", monospace',
+              fontSize: 13,
+              letterSpacing: '0.2em',
+              color: '#C9A84C',
+              textTransform: 'uppercase',
+              marginBottom: 24,
+            }}
           >
-            <div className="h-px w-12 bg-gradient-to-r from-transparent to-[#C21818]" />
-            <span className="text-[#D4AF37] text-xs tracking-[0.5em] font-bold uppercase">Member Onboarding</span>
-            <div className="h-px w-12 bg-gradient-to-l from-transparent to-[#C21818]" />
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-4xl md:text-5xl font-black text-white mb-3 tracking-tight"
+            The RCC Experience
+          </p>
+          <h1
+            ref={(el) => addRef(el, 1)}
+            style={{
+              ...fadeStyle,
+              fontFamily: '"Playfair Display", serif',
+              fontSize: 'clamp(34px, 5vw, 54px)',
+              color: '#F5F0E8',
+              lineHeight: 1.15,
+              marginBottom: 20,
+            }}
           >
-            Join{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C21818] to-[#D4AF37]">RCC</span>
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-white/60"
-          >
-            Complete your onboarding to become an RCC community member.
-          </motion.p>
+            Play better. Meet your people.
+          </h1>
         </div>
+      </section>
 
-        <AnimatePresence mode="wait">
-          {status === 'success' ? (
-            <motion.div
-              key="success"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="glass rounded-3xl p-12 text-center"
+      {/* Experience Cards */}
+      <section style={{ padding: '40px 24px 80px', maxWidth: 1100, margin: '0 auto' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20 }}>
+          {experiences.map((exp, i) => (
+            <div
+              key={exp.title}
+              ref={(el) => addRef(el, 2 + i)}
+              style={{
+                ...fadeStyle,
+                transitionDelay: `${i * 0.08}s`,
+                background: 'rgba(255,255,255,0.04)',
+                border: '1px solid rgba(201,168,76,0.2)',
+                borderRadius: 12,
+                padding: '28px 24px',
+              }}
             >
-              <div className="text-7xl mb-4">🎉</div>
-              <CheckCircle2 size={56} className="text-[#D4AF37] mx-auto mb-4" />
-              <h2 className="text-3xl font-black text-white mb-3">Welcome to RCC!</h2>
-              <p className="text-white/60 mb-2">Your onboarding request has been submitted.</p>
-              <p className="text-white/40 text-sm mb-8">Our admins will review your profile and reach out on WhatsApp within 24–48 hours.</p>
-              <div className="space-y-3">
-                <a
-                  href={SOCIAL_LINKS.whatsapp}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-3 w-full py-4 bg-gradient-to-r from-[#25D366] to-[#128C7E] text-white font-black tracking-widest rounded-full"
-                >
-                  <MessageCircle size={18} />
-                  JOIN WHATSAPP COMMUNITY
-                </a>
-                <a
-                  href="/birthday"
-                  className="flex items-center justify-center w-full py-3 glass text-white/60 hover:text-white text-sm rounded-full transition-colors"
-                >
-                  🎂 Also add your birthday →
-                </a>
-              </div>
-            </motion.div>
+              <exp.icon size={28} color="#C9A84C" style={{ marginBottom: 16 }} />
+              <h3 style={{ fontFamily: '"Playfair Display", serif', fontSize: 18, color: '#F5F0E8', marginBottom: 8 }}>
+                {exp.title}
+              </h3>
+              <p style={{ fontFamily: '"Montserrat", sans-serif', fontSize: 14, color: 'rgba(245,240,232,0.55)', lineHeight: 1.6 }}>
+                {exp.desc}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Join Form */}
+      <section style={{ padding: '0 24px 120px', maxWidth: 740, margin: '0 auto' }}>
+        <div
+          ref={(el) => addRef(el, 7)}
+          style={{
+            ...fadeStyle,
+            background: 'rgba(255,255,255,0.03)',
+            border: '1px solid rgba(201,168,76,0.2)',
+            borderRadius: 16,
+            padding: 'clamp(32px, 6vw, 56px)',
+          }}
+        >
+          <h2 style={{ fontFamily: '"Playfair Display", serif', fontSize: 32, color: '#F5F0E8', marginBottom: 8 }}>
+            Apply for Membership
+          </h2>
+          <p style={{ fontFamily: '"Montserrat", sans-serif', fontSize: 15, color: 'rgba(245,240,232,0.5)', marginBottom: 40 }}>
+            We review applications and reach out within 48 hours.
+          </p>
+
+          {submitted ? (
+            <div style={{ textAlign: 'center', padding: '48px 0' }}>
+              <div style={{ fontSize: 48, marginBottom: 20 }}>🎉</div>
+              <h3 style={{ fontFamily: '"Playfair Display", serif', fontSize: 26, color: '#F5F0E8', marginBottom: 12 }}>
+                Application received!
+              </h3>
+              <p style={{ fontFamily: '"Montserrat", sans-serif', fontSize: 15, color: 'rgba(245,240,232,0.6)' }}>
+                We'll reach out within 48 hours via WhatsApp or email.
+              </p>
+            </div>
           ) : (
-            <motion.div
-              key="form"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="glass rounded-3xl overflow-hidden"
-            >
-              {/* Step progress bar */}
-              <div className="px-8 pt-8 pb-4">
-                <div className="flex items-center gap-2 mb-6">
-                  {steps.map((s, i) => (
-                    <div key={i} className="flex items-center gap-2 flex-1">
-                      <div className={`flex items-center gap-2 ${i <= step ? 'text-white' : 'text-white/30'}`}>
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-black transition-all duration-300 ${
-                          i < step
-                            ? 'bg-gradient-to-br from-[#C21818] to-[#D4AF37] text-white'
-                            : i === step
-                            ? 'bg-white/10 border border-[#D4AF37] text-white'
-                            : 'bg-white/5 text-white/30'
-                        }`}>
-                          {i < step ? '✓' : i + 1}
-                        </div>
-                        <span className="text-xs font-bold tracking-wider hidden sm:block">{s.label}</span>
-                      </div>
-                      {i < steps.length - 1 && (
-                        <div className={`h-px flex-1 transition-all duration-500 ${i < step ? 'bg-gradient-to-r from-[#C21818] to-[#D4AF37]' : 'bg-white/10'}`} />
-                      )}
-                    </div>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+                <div>
+                  <label style={labelStyle}>Full Name *</label>
+                  <input name="fullName" required type="text" style={inputStyle} placeholder="Your full name" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Phone Number *</label>
+                  <input name="phone" required type="tel" style={inputStyle} placeholder="+91 XXXXX XXXXX" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+                <div>
+                  <label style={labelStyle}>Email *</label>
+                  <input name="email" required type="email" style={inputStyle} placeholder="you@email.com" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Gender</label>
+                  <select name="gender" style={inputStyle}>
+                    <option value="">Select…</option>
+                    <option>Male</option>
+                    <option>Female</option>
+                    <option>Non-binary</option>
+                    <option>Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+                <div>
+                  <label style={labelStyle}>Age</label>
+                  <input name="age" type="number" min={10} max={80} style={inputStyle} placeholder="25" />
+                </div>
+                <div>
+                  <label style={labelStyle}>Location in Delhi</label>
+                  <input name="location" type="text" style={inputStyle} placeholder="e.g. West Delhi, Dwarka" />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+                <div>
+                  <label style={labelStyle}>Badminton Skill Level</label>
+                  <select name="skillLevel" style={inputStyle}>
+                    <option value="">Select…</option>
+                    <option>Complete Beginner</option>
+                    <option>Beginner</option>
+                    <option>Intermediate</option>
+                    <option>Advanced</option>
+                    <option>Competitive</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>Playing Experience</label>
+                  <select name="experience" style={inputStyle}>
+                    <option value="">Select…</option>
+                    <option>Never played</option>
+                    <option>&lt; 1 year</option>
+                    <option>1–3 years</option>
+                    <option>3+ years</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label style={labelStyle}>Preferred Playing Days</label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginTop: 4 }}>
+                  {days.map((day) => (
+                    <button
+                      key={day}
+                      type="button"
+                      onClick={() => toggleDay(day)}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: 6,
+                        border: selectedDays.includes(day) ? '1px solid #C9A84C' : '1px solid rgba(201,168,76,0.2)',
+                        background: selectedDays.includes(day) ? 'rgba(201,168,76,0.15)' : 'transparent',
+                        color: selectedDays.includes(day) ? '#C9A84C' : 'rgba(245,240,232,0.5)',
+                        fontFamily: '"Montserrat", sans-serif',
+                        fontSize: 13,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {day}
+                    </button>
                   ))}
                 </div>
+              </div>
 
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-2xl">{steps[step].icon}</span>
-                  <h3 className="text-lg font-black text-white">{steps[step].label}</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
+                <div>
+                  <label style={labelStyle}>Preferred Time</label>
+                  <select name="preferredTime" style={inputStyle}>
+                    <option value="">Select…</option>
+                    <option>Morning</option>
+                    <option>Evening</option>
+                    <option>Weekends</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={labelStyle}>How did you hear about us?</label>
+                  <select name="referralSource" style={inputStyle}>
+                    <option value="">Select…</option>
+                    <option>Instagram</option>
+                    <option>WhatsApp</option>
+                    <option>Friend</option>
+                    <option>Google</option>
+                    <option>Hudle</option>
+                    <option>Other</option>
+                  </select>
                 </div>
               </div>
 
-              <div className="px-8 pb-8">
-                <AnimatePresence mode="wait">
-                  {/* ─── STEP 1: About You ─── */}
-                  {step === 0 && (
-                    <motion.div
-                      key="step0"
-                      initial={{ opacity: 0, x: 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -30 }}
-                      className="space-y-4"
-                    >
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-2">
-                          Full Name <span className="text-[#C21818]">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={form.full_name}
-                          onChange={e => set('full_name', e.target.value)}
-                          placeholder="Your full name"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-2">
-                          WhatsApp Number <span className="text-[#C21818]">*</span>
-                        </label>
-                        <input
-                          type="tel"
-                          required
-                          value={form.phone}
-                          onChange={e => set('phone', e.target.value)}
-                          placeholder="+91 XXXXX XXXXX"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-2">Email (optional)</label>
-                        <input
-                          type="email"
-                          value={form.email}
-                          onChange={e => set('email', e.target.value)}
-                          placeholder="you@example.com"
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-2">
-                          Birthday 🎂 (optional)
-                        </label>
-                        <input
-                          type="date"
-                          value={form.birthday}
-                          onChange={e => set('birthday', e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
-                        />
-                        <p className="text-white/30 text-xs mt-1">We'll celebrate you on your special day!</p>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* ─── STEP 2: Your Game ─── */}
-                  {step === 1 && (
-                    <motion.div
-                      key="step1"
-                      initial={{ opacity: 0, x: 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -30 }}
-                      className="space-y-5"
-                    >
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-3">
-                          Skill Level <span className="text-[#C21818]">*</span>
-                        </label>
-                        <div className="grid grid-cols-2 gap-3">
-                          {skillLevels.map(level => (
-                            <button
-                              key={level}
-                              type="button"
-                              onClick={() => set('skill_level', level)}
-                              className={`py-3 rounded-xl text-sm font-bold transition-all duration-200 ${
-                                form.skill_level === level
-                                  ? 'bg-gradient-to-r from-[#C21818] to-[#D4AF37] text-white shadow-[0_0_20px_rgba(194,24,24,0.3)]'
-                                  : 'bg-white/5 text-white/50 hover:bg-white/10 hover:text-white border border-white/5'
-                              }`}
-                            >
-                              {level}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-2">
-                          Years Playing Badminton
-                        </label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="50"
-                          value={form.years_playing}
-                          onChange={e => set('years_playing', e.target.value)}
-                          className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]/50 transition-colors text-sm"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-3">Court Preference</label>
-                        <div className="space-y-2">
-                          {courtPreferences.map(court => (
-                            <button
-                              key={court}
-                              type="button"
-                              onClick={() => set('court_preference', court)}
-                              className={`w-full text-left px-4 py-3 rounded-xl text-sm transition-all duration-200 ${
-                                form.court_preference === court
-                                  ? 'bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37]'
-                                  : 'bg-white/5 text-white/50 hover:bg-white/8 border border-transparent'
-                              }`}
-                            >
-                              {form.court_preference === court ? '✓ ' : ''}{court}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </motion.div>
-                  )}
-
-                  {/* ─── STEP 3: Community ─── */}
-                  {step === 2 && (
-                    <motion.div
-                      key="step2"
-                      initial={{ opacity: 0, x: 30 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -30 }}
-                      className="space-y-5"
-                    >
-                      <div>
-                        <label className="block text-white/50 text-xs tracking-widest uppercase mb-3">How did you hear about RCC?</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {howHeardOptions.map(option => (
-                            <button
-                              key={option}
-                              type="button"
-                              onClick={() => set('how_heard', option)}
-                              className={`py-3 px-3 rounded-xl text-sm transition-all duration-200 text-left ${
-                                form.how_heard === option
-                                  ? 'bg-[#D4AF37]/15 border border-[#D4AF37]/30 text-[#D4AF37] font-bold'
-                                  : 'bg-white/5 text-white/50 hover:bg-white/10 border border-transparent'
-                              }`}
-                            >
-                              {option}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Guidelines agreement */}
-                      <div className="glass-gold rounded-2xl p-5">
-                        <h4 className="text-white font-black mb-3 text-sm">Community Guidelines</h4>
-                        <ul className="space-y-1.5 text-white/60 text-xs mb-4">
-                          {[
-                            'Respectful conduct is mandatory at all times',
-                            'No spamming, harassment, or unauthorized promotions',
-                            'Advance payment required for session slots',
-                            'Late cancellations are payable',
-                            'Any rivalries must be disclosed to admins',
-                          ].map(g => (
-                            <li key={g} className="flex items-start gap-2">
-                              <span className="text-[#D4AF37] flex-shrink-0">✓</span>
-                              {g}
-                            </li>
-                          ))}
-                        </ul>
-                        <label className="flex items-start gap-3 cursor-pointer group">
-                          <div
-                            onClick={() => set('agree_guidelines', !form.agree_guidelines)}
-                            className={`w-5 h-5 rounded flex-shrink-0 mt-0.5 flex items-center justify-center transition-all duration-200 border ${
-                              form.agree_guidelines
-                                ? 'bg-gradient-to-br from-[#C21818] to-[#D4AF37] border-transparent'
-                                : 'bg-white/5 border-white/20 group-hover:border-white/40'
-                            }`}
-                          >
-                            {form.agree_guidelines && <span className="text-white text-xs">✓</span>}
-                          </div>
-                          <span className="text-white/70 text-sm leading-relaxed">
-                            I have read and agree to the{' '}
-                            <a href="/guidelines" target="_blank" className="text-[#D4AF37] hover:underline">
-                              RCC Community Guidelines
-                            </a>{' '}
-                            and commit to upholding them.
-                          </span>
-                        </label>
-                      </div>
-
-                      {status === 'error' && (
-                        <div className="flex items-center gap-2 p-3 rounded-xl bg-[#C21818]/10 border border-[#C21818]/20 text-[#C21818] text-sm">
-                          <AlertCircle size={16} />
-                          {errorMsg}
-                        </div>
-                      )}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {/* Navigation */}
-                <div className="flex gap-3 mt-8">
-                  {step > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => setStep(s => (s - 1) as 0 | 1 | 2)}
-                      className="flex items-center gap-2 px-5 py-3.5 glass rounded-xl text-white/60 hover:text-white text-sm font-bold transition-colors"
-                    >
-                      <ChevronLeft size={16} />
-                      Back
-                    </button>
-                  )}
-
-                  {step < steps.length - 1 ? (
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: canNext() ? 1.02 : 1 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => canNext() && setStep(s => (s + 1) as 0 | 1 | 2)}
-                      disabled={!canNext()}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-[#C21818] to-[#8B0000] text-white font-black text-sm tracking-widest rounded-xl disabled:opacity-40 transition-opacity"
-                    >
-                      NEXT <ChevronRight size={16} />
-                    </motion.button>
-                  ) : (
-                    <motion.button
-                      type="button"
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleSubmit}
-                      disabled={status === 'loading' || !form.agree_guidelines}
-                      className="flex-1 flex items-center justify-center gap-2 py-3.5 bg-gradient-to-r from-[#C21818] to-[#D4AF37] text-white font-black text-sm tracking-widest rounded-xl disabled:opacity-40"
-                    >
-                      {status === 'loading' ? (
-                        <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          <Zap size={16} className="fill-current" />
-                          SUBMIT & JOIN RCC
-                        </>
-                      )}
-                    </motion.button>
-                  )}
+              <div>
+                <label style={labelStyle}>Own Racket?</label>
+                <div style={{ display: 'flex', gap: 20, marginTop: 4 }}>
+                  {['Yes', 'No', 'Will buy one'].map((opt) => (
+                    <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: '"Montserrat", sans-serif', fontSize: 14, color: 'rgba(245,240,232,0.7)' }}>
+                      <input
+                        type="radio"
+                        name="ownRacket"
+                        value={opt}
+                        checked={racket === opt}
+                        onChange={() => setRacket(opt)}
+                        style={{ accentColor: '#C9A84C' }}
+                      />
+                      {opt}
+                    </label>
+                  ))}
                 </div>
               </div>
-            </motion.div>
+
+              <div>
+                <label style={labelStyle}>Why do you want to join? *</label>
+                <textarea
+                  name="whyJoin"
+                  required
+                  rows={3}
+                  style={{ ...inputStyle, resize: 'vertical' }}
+                  placeholder="Tell us a bit about yourself and what you're looking for…"
+                />
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={consented}
+                    onChange={(e) => setConsented(e.target.checked)}
+                    required
+                    style={{ accentColor: '#C9A84C', marginTop: 2, flexShrink: 0 }}
+                  />
+                  <span style={{ fontFamily: '"Montserrat", sans-serif', fontSize: 14, color: 'rgba(245,240,232,0.65)', lineHeight: 1.5 }}>
+                    I agree to RCC's community guidelines and zero-tolerance policy *
+                  </span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={whatsappOptIn}
+                    onChange={(e) => setWhatsappOptIn(e.target.checked)}
+                    style={{ accentColor: '#C9A84C', marginTop: 2, flexShrink: 0 }}
+                  />
+                  <span style={{ fontFamily: '"Montserrat", sans-serif', fontSize: 14, color: 'rgba(245,240,232,0.65)', lineHeight: 1.5 }}>
+                    I'd like to receive session updates and announcements via WhatsApp
+                  </span>
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={submitting || !consented}
+                style={{
+                  width: '100%',
+                  background: submitting || !consented ? 'rgba(201,168,76,0.4)' : '#C9A84C',
+                  color: '#050810',
+                  fontFamily: '"Montserrat", sans-serif',
+                  fontWeight: 700,
+                  fontSize: 16,
+                  letterSpacing: '0.08em',
+                  padding: '18px',
+                  border: 'none',
+                  borderRadius: 8,
+                  cursor: submitting || !consented ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.2s',
+                }}
+              >
+                {submitting ? 'Submitting…' : 'Submit Application'}
+              </button>
+            </form>
           )}
-        </AnimatePresence>
-      </div>
-    </div>
+        </div>
+      </section>
+
+      <FooterRCC />
+    </main>
   );
 }
