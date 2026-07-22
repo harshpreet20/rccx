@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAdminAuth } from '@/lib/admin-auth';
 import { supabase } from '@/lib/supabase';
-import { Trophy, FileText, LogOut, Loader2, LayoutDashboard } from 'lucide-react';
+import { Trophy, FileText, LogOut, Loader2, LayoutDashboard, ShoppingBag } from 'lucide-react';
 
 function LoginForm() {
   const [email, setEmail] = useState('');
@@ -109,6 +109,7 @@ function AdminHeader() {
   const navItems = [
     { href: '/admin/tournament', label: 'Tournament', icon: Trophy },
     { href: '/admin/forms', label: 'Forms', icon: FileText },
+    { href: '/admin/store', label: 'Store', icon: ShoppingBag },
     { href: '/enter/backend', label: 'Dashboard', icon: LayoutDashboard },
   ];
 
